@@ -85,7 +85,7 @@ plans). Incorporated:
 ## 3. Notebook conventions (Colab-ready)
 
 - First markdown cell = **Colab badge**:
-  `[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/<user>/<repo>/blob/main/notebooks/<file>.ipynb)`
+  `[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/pradeepvaka/llm-inference-90day/blob/master/notebooks/<file>.ipynb)`
 - Second cell = `pip install` block (first and only installs; `--quiet`).
 - Resource budget: **CPU or a single free T4 only**. No multi-GPU,
   no downloads over ~2 GB (use `gpt2`, `gpt2-medium`, `distilgpt2`).
