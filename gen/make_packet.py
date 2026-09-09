@@ -274,16 +274,26 @@ def main():
             break
 
     trimmed = 0
-    # Graceful trim: drop trailing plain paragraphs first (keep >= 1 page
-    # worth of content). Prefer dropping from the tail.
+    cut_sections = 0
+    # Graceful trim: first drop trailing body paragraphs/bullets
+    # (content-preserving), then — only as a last resort — trailing
+    # sections (headings), so the 10-page cap always holds.
     while pages > MAX_PAGES and len(blocks) > 3:
-        # find last droppable paragraph/bullet index
-        for idx in range(len(blocks) - 1, -1, -1):
-            if blocks[idx][0] in ("p", "bullet"):
-                del blocks[idx]
-                trimmed += 1
+        dropped = False
+        for kinds, counter in ((("p", "bullet"), "body"),
+                               (("h3", "h2", "h1"), "section")):
+            for idx in range(len(blocks) - 1, -1, -1):
+                if blocks[idx][0] in kinds:
+                    del blocks[idx]
+                    if counter == "body":
+                        trimmed += 1
+                    else:
+                        cut_sections += 1
+                    dropped = True
+                    break
+            if dropped:
                 break
-        else:
+        if not dropped:
             break
         pages = build_pdf(blocks, args.day, args.title, args.date,
                           chosen_scale)
@@ -304,6 +314,9 @@ def main():
     if trimmed:
         print(f"WARNING: trimmed {trimmed} trailing paragraph(s) to fit "
               f"{MAX_PAGES} pages.")
+    if cut_sections:
+        print(f"WARNING: cut {cut_sections} trailing section(s) to fit "
+              f"{MAX_PAGES} pages; consider splitting the day's content.")
 
 
 if __name__ == "__main__":
