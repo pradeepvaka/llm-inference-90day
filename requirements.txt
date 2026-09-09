@@ -1,0 +1,2 @@
+reportlab>=4
+pypdf>=4
