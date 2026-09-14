@@ -28,7 +28,9 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.pdfbase.pdfmetrics import stringWidth
+from reportlab.pdfbase.pdfmetrics import stringWidth, registerFontFamily
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase.pdfmetrics import registerFont
 from reportlab.platypus import (
     BaseDocTemplate,
     Frame,
@@ -45,6 +47,25 @@ from reportlab.platypus import (
 MAX_PAGES = 10
 REPO_FOOTER = "LLM Inference 90-Day"
 PAGE_W = 7.0 * inch  # LETTER width minus 0.75in margins on both sides
+
+# Body fonts: DejaVu (not Helvetica/Courier) because the built-in PDF fonts
+# lack the math glyphs our packets use (√ → ∞ Σ × ÷ − ᵀ sub/superscripts).
+# DejaVu ships no true oblique for the proportional family, so italic maps
+# back to the regular face (upright) rather than dropping glyphs.
+_FD = "/usr/share/fonts/truetype/dejavu/"
+try:
+    registerFont(TTFont("DejaVuSans", _FD + "DejaVuSans.ttf"))
+    registerFont(TTFont("DejaVuSans-Bold", _FD + "DejaVuSans-Bold.ttf"))
+    registerFont(TTFont("DejaVuSansMono", _FD + "DejaVuSansMono.ttf"))
+    registerFont(TTFont("DejaVuSansMono-Bold", _FD + "DejaVuSansMono-Bold.ttf"))
+    registerFontFamily("DejaVuSans", normal="DejaVuSans", bold="DejaVuSans-Bold",
+                       italic="DejaVuSans", boldItalic="DejaVuSans-Bold")
+    registerFontFamily("DejaVuSansMono", normal="DejaVuSansMono",
+                       bold="DejaVuSansMono-Bold", italic="DejaVuSansMono",
+                       boldItalic="DejaVuSansMono-Bold")
+    SANS, SANSB, MONO = "DejaVuSans", "DejaVuSans-Bold", "DejaVuSansMono"
+except Exception:
+    SANS, SANSB, MONO = "Helvetica", "Helvetica-Bold", "Courier"  # fallback
 
 ACCENT = colors.HexColor("#1D4ED8")      # deep blue
 INK = colors.HexColor("#111827")        # near-black
@@ -191,7 +212,7 @@ def _flush_list(run):
 def inline_fmt(text):
     """**bold**, *italic* (space-aware, skips math like 2 * 80), `code`."""
     text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text)
-    text = re.sub(r"`(.+?)`", r'<font face="Courier">\1</font>', text)
+    text = re.sub(r"`(.+?)`", r'<font face="DejaVuSansMono">\1</font>', text)
     # *italic*: opening * must follow start/whitespace/open-punct and a
     # non-space; closing * must precede whitespace/end/punctuation. This
     # keeps math like 2 * 80 untouched.
@@ -206,49 +227,49 @@ def inline_fmt(text):
 def make_styles(scale):
     base = 11 * scale
     return {
-        "title": ParagraphStyle("title", fontName="Helvetica-Bold",
+        "title": ParagraphStyle("title", fontName=SANSB,
                                 fontSize=24 * scale, leading=28 * scale,
                                 textColor=INK, spaceAfter=2),
-        "eyebrow": ParagraphStyle("eyebrow", fontName="Helvetica-Bold",
+        "eyebrow": ParagraphStyle("eyebrow", fontName=SANSB,
                                   fontSize=9 * scale, leading=11 * scale,
                                   textColor=ACCENT, spaceAfter=6),
-        "deck": ParagraphStyle("deck", fontName="Helvetica",
+        "deck": ParagraphStyle("deck", fontName=SANS,
                                fontSize=12 * scale, leading=15 * scale,
                                textColor=MUTED, spaceAfter=0),
-        "h1": ParagraphStyle("h1", fontName="Helvetica-Bold",
+        "h1": ParagraphStyle("h1", fontName=SANSB,
                              fontSize=17 * scale, leading=20 * scale,
                              textColor=INK, spaceBefore=16, spaceAfter=6),
-        "h2": ParagraphStyle("h2", fontName="Helvetica-Bold",
+        "h2": ParagraphStyle("h2", fontName=SANSB,
                              fontSize=14 * scale, leading=17 * scale,
                              textColor=HEADER_BG, spaceBefore=14,
                              spaceAfter=5),
-        "h3": ParagraphStyle("h3", fontName="Helvetica-BoldOblique",
+        "h3": ParagraphStyle("h3", fontName=SANSB,
                              fontSize=base, leading=base + 3,
                              textColor=INK, spaceBefore=9, spaceAfter=3),
-        "p": ParagraphStyle("p", fontName="Helvetica", fontSize=base,
+        "p": ParagraphStyle("p", fontName=SANS, fontSize=base,
                             leading=base + 4.5, spaceAfter=6, textColor=INK),
-        "bullet": ParagraphStyle("bullet", fontName="Helvetica",
+        "bullet": ParagraphStyle("bullet", fontName=SANS,
                                  fontSize=base, leading=base + 4.5,
                                  leftIndent=20, spaceAfter=3,
                                  bulletIndent=9, textColor=INK),
-        "olist": ParagraphStyle("olist", fontName="Helvetica",
+        "olist": ParagraphStyle("olist", fontName=SANS,
                                 fontSize=base, leading=base + 4.5,
                                 leftIndent=24, spaceAfter=4,
                                 bulletIndent=9, textColor=INK),
-        "code": ParagraphStyle("code", fontName="Courier",
+        "code": ParagraphStyle("code", fontName=MONO,
                                fontSize=9.5 * scale,
                                leading=13 * scale, textColor=INK),
-        "cell": ParagraphStyle("cell", fontName="Helvetica",
+        "cell": ParagraphStyle("cell", fontName=SANS,
                                fontSize=9.5 * scale, leading=12.5 * scale,
                                textColor=INK),
-        "cellh": ParagraphStyle("cellh", fontName="Helvetica-Bold",
+        "cellh": ParagraphStyle("cellh", fontName=SANSB,
                                 fontSize=9.5 * scale, leading=12.5 * scale,
                                 textColor=colors.white),
-        "caption": ParagraphStyle("caption", fontName="Helvetica-Oblique",
+        "caption": ParagraphStyle("caption", fontName=SANS,
                                    fontSize=9 * scale, leading=11 * scale,
                                    textColor=MUTED, spaceBefore=2,
                                    spaceAfter=8),
-        "quote": ParagraphStyle("quote", fontName="Helvetica",
+        "quote": ParagraphStyle("quote", fontName=SANS,
                                 fontSize=10.5 * scale,
                                 leading=14 * scale, textColor=INK),
     }
@@ -361,7 +382,7 @@ def build_flowables(blocks, styles):
             fl.append(Spacer(1, 8))
         elif kind == "code":
             fs = styles["code"].fontSize
-            wrapped = wrap_code(payload, "Courier", fs, PAGE_W - 20)
+            wrapped = wrap_code(payload, MONO, fs, PAGE_W - 20)
             pre = Preformatted(wrapped, styles["code"])
             t = Table([[pre]], colWidths=[PAGE_W])
             t.setStyle(TableStyle([
@@ -425,7 +446,7 @@ class PageCounter:
     def __call__(self, canvas, doc):
         self.pages = canvas.getPageNumber()
         canvas.saveState()
-        canvas.setFont("Helvetica", 9)
+        canvas.setFont(SANS, 9)
         canvas.setFillColor(MUTED)
         canvas.drawString(0.75 * inch, 0.6 * inch, REPO_FOOTER)
         canvas.drawRightString(7.75 * inch, 0.6 * inch,
