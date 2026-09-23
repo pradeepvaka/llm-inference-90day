@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:," />
+  <title>Stage 4: Serving Engines</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      color-scheme:light dark;
+      --bg:#eef2f1;--paper:#fbfdfc;--paper2:#e4ebe8;--ink:#10201d;--muted:#536460;
+      --line:#aab9b4;--line2:#ced8d4;--nav:#142420;--lime:#b7e43d;--green:#197650;
+      --blue:#087c8f;--orange:#d45a27;--red:#a7352b;--shadow:0 16px 44px rgba(22,48,40,.10);
+    }
+    @media(prefers-color-scheme:dark){:root{
+      --bg:#0d1513;--paper:#151f1c;--paper2:#202c28;--ink:#eef5f2;--muted:#a8b9b3;
+      --line:#475953;--line2:#2c3a36;--nav:#08100e;--lime:#c5ec58;--green:#61ca92;
+      --blue:#59c7d7;--orange:#ff8758;--red:#ff8a7e;--shadow:0 18px 50px rgba(0,0,0,.28);
+    }}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:"Public Sans",sans-serif;line-height:1.58;overflow-x:hidden}
+    body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.45;background-image:linear-gradient(var(--line2) 1px,transparent 1px),linear-gradient(90deg,var(--line2) 1px,transparent 1px);background-size:28px 28px;mask-image:linear-gradient(#000,transparent 75%)}
+    a{color:var(--blue);text-underline-offset:3px} button,input,select{font:inherit}
+    .layout{max-width:1320px;margin:auto;display:grid;grid-template-columns:236px minmax(0,1fr);gap:42px;padding:24px 28px 96px}
+    .rail{position:sticky;top:18px;align-self:start;height:calc(100vh - 36px);background:var(--nav);color:#eaf3ef;padding:24px 18px;display:flex;flex-direction:column}
+    .rail .stage{font:600 12px "JetBrains Mono";color:var(--lime);letter-spacing:.1em;margin-bottom:24px}
+    .rail nav{display:grid}.rail nav a{color:#aebdb8;text-decoration:none;padding:9px 8px;border-left:2px solid #34443f;font-size:13px}.rail nav a.active{color:white;border-color:var(--lime);background:#1e312b}
+    .rail .meter{margin-top:auto;font:11px/1.6 "JetBrains Mono";color:#9cafaa;border-top:1px solid #34443f;padding-top:16px}.rail .meter b{color:var(--lime)}
+    main{min-width:0}
+    .hero{min-height:610px;display:grid;grid-template-columns:minmax(0,1.08fr) minmax(330px,.92fr);gap:36px;align-items:center;padding:48px 0 68px;border-bottom:2px solid var(--ink)}
+    .kicker{font:600 12px "JetBrains Mono";color:var(--green);letter-spacing:.08em;margin-bottom:18px}
+    h1{font-size:clamp(46px,6.4vw,86px);line-height:.92;letter-spacing:-.06em;margin:0 0 25px;max-width:760px}h1 em{display:block;color:var(--orange);font-style:normal}
+    .lede{font-size:clamp(18px,2vw,23px);color:var(--muted);max-width:700px;margin:0 0 27px}
+    .meta{display:flex;gap:8px;flex-wrap:wrap}.tag{font:500 11px "JetBrains Mono";padding:7px 9px;border:1px solid var(--line);background:var(--paper)}
+    .rack{background:var(--nav);color:#e7f0ed;padding:18px;box-shadow:var(--shadow);border:1px solid #3c504a;position:relative}
+    .rack::before{content:"TOKEN FACTORY";position:absolute;top:-11px;right:16px;background:var(--lime);color:#132018;font:700 10px "JetBrains Mono";padding:4px 8px;letter-spacing:.1em}
+    .rack-top{display:flex;justify-content:space-between;gap:12px;font:11px "JetBrains Mono";color:#8fa39d;padding:3px 0 14px}.rack-unit{border:1px solid #40534d;padding:13px;margin:7px 0;display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:12px;background:#10201b}.rack-unit b{font:600 11px "JetBrains Mono";color:var(--lime)}.rack-unit span{font:12px "JetBrains Mono"}.lights{display:flex;gap:5px}.light{width:8px;height:8px;background:#527168}.light.on{background:var(--lime);box-shadow:0 0 0 4px rgba(183,228,61,.1)}
+    .bus{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;font:10px "JetBrains Mono";color:#82958f;margin:13px 0}.bus i{height:1px;background:#40534d}
+    section{padding:76px 0;border-bottom:1px solid var(--line);scroll-margin-top:18px}.sec-head{display:grid;grid-template-columns:112px 1fr;gap:20px;margin-bottom:34px}.sec-no{font:600 12px "JetBrains Mono";color:var(--orange);padding-top:9px}h2{font-size:clamp(32px,4.4vw,56px);line-height:1.02;letter-spacing:-.045em;margin:0 0 12px}.sec-head p{font-size:18px;color:var(--muted);max-width:780px;margin:0}h3{font-size:23px;line-height:1.2;letter-spacing:-.02em;margin:0 0 12px}h4{font:600 13px "JetBrains Mono";color:var(--green);margin:0 0 8px}p{margin:0 0 15px}
+    .targets{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);background:var(--line);gap:1px}.target{padding:21px;background:var(--paper)}.target .n{font:600 11px "JetBrains Mono";color:var(--orange)}.target strong{display:block;font-size:16px;margin:18px 0 7px}.target small{color:var(--muted);font-size:13px}
+    .pipeline{border:1px solid var(--line);background:var(--paper);padding:26px}.pipe{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.node{min-height:112px;border:1px solid var(--line);background:var(--bg);padding:14px;position:relative}.node:not(:last-child)::after{content:"→";position:absolute;right:-13px;top:41%;z-index:2;background:var(--paper);color:var(--orange);font-weight:800;padding:1px 3px}.node b{font:600 12px "JetBrains Mono";display:block;color:var(--blue);margin-bottom:9px}.node small{color:var(--muted);font-size:12px}.critical{margin-top:16px;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;border-top:1px solid var(--line);padding-top:16px}.critical span{font:700 12px "JetBrains Mono";color:var(--orange)}.critical p{font-size:14px;color:var(--muted);margin:0}
+    .split{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}.panel,.sim,.quiz{background:var(--paper);border:1px solid var(--line);padding:24px}.panel p,.panel li{color:var(--muted)}.panel ul{padding-left:19px;margin:12px 0}.panel li{margin:7px 0}.equation{font:600 clamp(16px,2vw,24px) "JetBrains Mono";padding:20px;border:1px solid var(--line);background:var(--bg);overflow-wrap:anywhere}.accent{color:var(--orange)}
+    .timeline{display:grid;gap:7px;margin:20px 0}.lane{display:grid;grid-template-columns:36px repeat(10,1fr);gap:4px;align-items:center}.lane label{font:600 11px "JetBrains Mono";color:var(--muted)}.slot{height:26px;background:var(--paper2);border:1px solid var(--line2)}.slot.busy{background:color-mix(in srgb,var(--blue) 24%,var(--paper));border-color:var(--blue)}.slot.done{background:transparent;border-style:dashed}.slot.new{background:color-mix(in srgb,var(--lime) 32%,var(--paper));border-color:var(--green)}
+    .tabs{display:flex;gap:7px;margin-bottom:16px}.tabs button,.controls button{border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:9px 13px;cursor:pointer}.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}.tabbody{display:none}.tabbody.active{display:block}
+    .sim-head{display:flex;justify-content:space-between;gap:18px;align-items:start;margin-bottom:20px}.sim-head p{color:var(--muted);font-size:13px;margin:0;max-width:610px}.controls{display:flex;flex-wrap:wrap;gap:8px}.controls button.primary{background:var(--orange);border-color:var(--orange);color:white}.controls button:focus-visible,.tabs button:focus-visible,.answers button:focus-visible{outline:3px solid color-mix(in srgb,var(--blue) 45%,transparent);outline-offset:2px}
+    .board{display:grid;grid-template-columns:.8fr 1.4fr .8fr;gap:12px;margin-top:18px}.bay{border:1px solid var(--line);background:var(--bg);padding:14px;min-height:190px}.bay-title{display:flex;justify-content:space-between;font:600 11px "JetBrains Mono";color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:10px}.jobs{display:grid;gap:7px}.job{display:grid;grid-template-columns:28px 1fr auto;gap:7px;align-items:center;background:var(--paper);border:1px solid var(--line);padding:8px;font:11px "JetBrains Mono"}.job b{color:var(--blue)}.progress{height:5px;background:var(--paper2)}.progress i{display:block;height:100%;background:var(--orange)}.job.donejob{opacity:.64}.tick{font:600 12px "JetBrains Mono";color:var(--green);margin-top:12px}.lesson{padding:16px 18px;border:1px solid color-mix(in srgb,var(--green) 55%,var(--line));background:color-mix(in srgb,var(--green) 8%,var(--paper));margin-top:16px}.lesson strong{color:var(--green)}.lesson p{margin:4px 0 0;font-size:14px}
+    .allocator{display:grid;grid-template-columns:1fr 1fr;gap:18px}.memory-map{background:var(--nav);color:#edf6f2;border:1px solid #40534d;padding:20px}.mem-title{font:600 11px "JetBrains Mono";color:#9eb1ab;margin-bottom:14px}.blocks{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}.block{aspect-ratio:1;border:1px solid #48605a;display:grid;place-items:center;font:600 10px "JetBrains Mono";color:#9eb1ab}.block.a{background:#11667a;color:white}.block.b{background:#a94b27;color:white}.block.c{background:#637b26;color:white}.block.free{border-style:dashed}.block.tail{background:repeating-linear-gradient(135deg,#637b26 0 5px,#344721 5px 10px)}
+    .legend2{display:flex;flex-wrap:wrap;gap:12px;margin-top:13px;font:10px "JetBrains Mono";color:#9eb1ab}.legend2 i{display:inline-block;width:9px;height:9px;margin-right:5px}.inputs{display:grid;gap:14px}.field label{font:500 11px "JetBrains Mono";color:var(--muted);display:block;margin-bottom:6px}.field input,.field select{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:10px;border-radius:0}.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.result{border-top:3px solid var(--blue);background:var(--bg);padding:14px}.result small{font:10px "JetBrains Mono";color:var(--muted);display:block}.result strong{font:700 23px "JetBrains Mono";color:var(--blue)}
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:22px}.step{background:var(--paper);padding:22px}.step .s{font:600 11px "JetBrains Mono";color:var(--orange)}.step h3{font-size:19px;margin-top:15px}.step p{font-size:14px;color:var(--muted)}
+    .trade{display:grid;grid-template-columns:1fr 1fr;gap:18px}.trade-card{background:var(--paper);border:1px solid var(--line);padding:23px}.trade-card .axis{display:flex;justify-content:space-between;font:11px "JetBrains Mono";color:var(--muted);margin:12px 0 7px}.trade-card input[type=range]{width:100%;accent-color:var(--orange)}.gauge{height:16px;border:1px solid var(--line);background:var(--paper2);margin:9px 0}.gauge i{display:block;height:100%;background:var(--orange);transition:width .2s}.mix-output{border-top:1px solid var(--line);margin-top:18px;padding-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.mix-output small{display:block;font:10px "JetBrains Mono";color:var(--muted)}.mix-output strong{font:700 20px "JetBrains Mono"}.warning{color:var(--red)!important}
+    .metrics{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);background:var(--line);gap:1px}.metric{background:var(--paper);padding:20px}.metric code{font:600 13px "JetBrains Mono";color:var(--blue)}.metric strong{display:block;margin:14px 0 5px;font-size:18px}.metric p{font-size:13px;color:var(--muted);margin:0}.metric .formula-sm{font:11px "JetBrains Mono";color:var(--orange);margin-top:10px}
+    .engine-table{display:grid;grid-template-columns:1.05fr repeat(3,1fr);border:1px solid var(--line);background:var(--line);gap:1px}.cell{background:var(--paper);padding:15px;font-size:13px}.cell.h{background:var(--nav);color:white;font:600 12px "JetBrains Mono"}.cell.row{font-weight:700;color:var(--muted)}.cell b{display:block;font-size:17px;color:var(--ink);margin-bottom:5px}.cell .flag{display:inline-block;background:color-mix(in srgb,var(--orange) 12%,var(--paper));color:var(--orange);font:600 10px "JetBrains Mono";padding:3px 5px;margin-top:7px}
+    .decision{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}.pick{border-top:4px solid var(--blue);background:var(--paper);padding:20px}.pick:nth-child(2){border-color:var(--green)}.pick:nth-child(3){border-color:var(--orange)}.pick p{font-size:14px;color:var(--muted)}
+    pre{margin:14px 0 0;background:var(--nav);color:#e2ece8;border-left:4px solid var(--lime);padding:16px;font:12px/1.6 "JetBrains Mono";white-space:pre-wrap;overflow-wrap:anywhere}code{font-family:"JetBrains Mono"}.labs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.lab{background:var(--paper);border:1px solid var(--line);padding:21px}.lab .labno{font:600 11px "JetBrains Mono";color:var(--orange)}.lab h3{font-size:20px;margin-top:18px}.lab p,.lab li{color:var(--muted);font-size:14px}.lab ul{padding-left:18px}.lab li{margin:7px 0}
+    .worksheet{margin-top:18px;background:var(--paper);border:1px solid var(--line);padding:23px}.worksheet-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.worksheet .w{background:var(--bg);border:1px solid var(--line);padding:14px}.worksheet small{display:block;font:10px "JetBrains Mono";color:var(--muted);margin-bottom:8px}.worksheet strong{font-size:14px}
+    .quiz{padding:26px}.q{padding:20px 0;border-top:1px solid var(--line)}.q:first-child{border-top:0}.q>p{font-weight:700}.answers{display:grid;grid-template-columns:1fr 1fr;gap:8px}.answers button{background:var(--bg);color:var(--ink);border:1px solid var(--line);text-align:left;padding:12px;cursor:pointer}.answers button.correct{border-color:var(--green);background:color-mix(in srgb,var(--green) 12%,var(--paper))}.answers button.wrong{border-color:var(--red);background:color-mix(in srgb,var(--red) 10%,var(--paper))}.feedback{min-height:24px;color:var(--muted);font-size:13px;margin-top:7px}
+    .defense{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}.checklist{background:var(--nav);color:#e8f1ee;padding:26px}.checklist h3{color:white}.checklist ul{list-style:none;padding:0;margin:16px 0 0}.checklist li{display:grid;grid-template-columns:23px 1fr;gap:8px;padding:10px 0;border-top:1px solid #344a43;font-size:14px}.checklist li::before{content:"□";color:var(--lime)}.failure{background:var(--paper);border:1px solid var(--line);padding:25px}.failure dl{margin:0}.failure dt{font-weight:700;color:var(--orange);margin-top:16px}.failure dd{margin:4px 0 0;color:var(--muted);font-size:14px}
+    .refs{display:grid;gap:0}.ref{display:grid;grid-template-columns:42px 1fr;gap:15px;padding:15px 0;border-top:1px solid var(--line)}.ref:first-child{border-top:0}.ref .rn{font:600 11px "JetBrains Mono";color:var(--orange)}.ref a{font-weight:700}.ref p{color:var(--muted);font-size:13px;margin:4px 0 0}.final{border-bottom:0;padding-bottom:20px}.next{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;background:var(--paper);border:1px solid var(--line);padding:26px}.next p{color:var(--muted);margin:0}.next span{font:600 12px "JetBrains Mono";color:var(--orange)}
+    @media(max-width:980px){.layout{grid-template-columns:1fr;padding:0 20px 72px}.rail{display:none}.hero{grid-template-columns:1fr;min-height:auto;padding-top:48px}.rack{max-width:720px}.targets{grid-template-columns:1fr 1fr}.pipe{grid-template-columns:repeat(3,1fr)}.node:nth-child(3)::after{display:none}.split,.allocator,.defense{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.engine-table{font-size:12px}.labs{grid-template-columns:1fr}.worksheet-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:680px){.layout{padding-left:14px;padding-right:14px}.hero h1{font-size:46px}.sec-head{grid-template-columns:1fr;gap:5px}.targets,.trade,.metrics,.decision{grid-template-columns:1fr}.pipe{grid-template-columns:1fr}.node:not(:last-child)::after{content:"↓";right:auto;left:50%;top:auto;bottom:-17px}.node:nth-child(3)::after{display:block}.board{grid-template-columns:1fr}.bay{min-height:0}.sim-head{display:grid}.engine-table{display:block;border:0;background:none}.engine-table .cell{border:1px solid var(--line);border-top:0}.engine-table .cell.h{display:none}.engine-table .cell.row{margin-top:14px;border-top:2px solid var(--ink);background:var(--paper2)}.engine-table .cell:not(.row)::before{content:attr(data-engine);display:block;font:600 10px "JetBrains Mono";color:var(--blue);margin-bottom:5px}.steps{grid-template-columns:1fr}.answers,.worksheet-grid{grid-template-columns:1fr}.blocks{grid-template-columns:repeat(6,1fr)}section{padding:56px 0}.mix-output{grid-template-columns:1fr 1fr}.result-grid{grid-template-columns:1fr}.next{grid-template-columns:1fr}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="rail" aria-label="Course navigation">
+    <div class="stage">STAGE 04 / 12</div>
+    <nav>
+      <a href="#objectives">Objectives</a><a href="#pipeline">Request path</a><a href="#batching">Continuous batching</a><a href="#paging">PagedAttention</a><a href="#scheduling">Scheduling</a><a href="#metrics">Metrics</a><a href="#engines">Engine comparison</a><a href="#labs">Labs</a><a href="#check">Knowledge check</a><a href="#defend">Ship defense</a><a href="#references">References</a>
+    </nav>
+    <div class="meter"><b>SYSTEMS TRACK</b><br>~55 MIN THEORY<br>~90 MIN LAB<br>3 INTERACTIVES</div>
+  </aside>
+  <main>
+    <header class="hero">
+      <div>
+        <div class="kicker">STAGE 04 · INFERENCE SYSTEMS</div>
+        <h1>Serving <em>engines</em></h1>
+        <p class="lede">Turn a token generator into a multi-tenant system. Trace how vLLM, SGLang, and TGI manage queues, KV memory, and iteration-level scheduling—then reason about throughput without sacrificing latency SLOs.</p>
+        <div class="meta"><span class="tag">CONTINUOUS BATCHING</span><span class="tag">PAGED KV CACHE</span><span class="tag">SCHEDULER POLICY</span><span class="tag">GOODPUT</span></div>
+      </div>
+      <div class="rack" role="img" aria-label="A serving engine pipeline from request router to scheduler, KV block manager and GPU workers">
+        <div class="rack-top"><span>ENGINE / 04</span><span>8 ACTIVE · 3 WAITING</span></div>
+        <div class="rack-unit"><b>R0</b><span>API router · stream mux</span><i class="lights"><i class="light on"></i><i class="light on"></i></i></div>
+        <div class="rack-unit"><b>Q1</b><span>admission + token budget</span><i class="lights"><i class="light on"></i><i class="light"></i></i></div>
+        <div class="bus"><i></i><span>ITERATION BOUNDARY</span><i></i></div>
+        <div class="rack-unit"><b>S2</b><span>continuous scheduler</span><i class="lights"><i class="light on"></i><i class="light on"></i></i></div>
+        <div class="rack-unit"><b>K3</b><span>paged KV block table</span><i class="lights"><i class="light on"></i><i class="light on"></i></i></div>
+        <div class="rack-unit"><b>G4</b><span>model executor · GPU</span><i class="lights"><i class="light on"></i><i class="light on"></i></i></div>
+      </div>
+    </header>
+
+    <section id="objectives">
+      <div class="sec-head"><div class="sec-no">00 — TARGET</div><div><h2>What you should be able to defend</h2><p>Serving is a resource-allocation problem with a model inside it. You should be able to explain every queue, memory decision, and SLO tradeoff.</p></div></div>
+      <div class="targets">
+        <div class="target"><span class="n">01</span><strong>Trace a request</strong><small>Separate validation, tokenization, admission, prefill, decode, sampling, and streaming.</small></div>
+        <div class="target"><span class="n">02</span><strong>Explain the primitives</strong><small>Show why iteration-level batching needs flexible KV allocation.</small></div>
+        <div class="target"><span class="n">03</span><strong>Tune a scheduler</strong><small>Reason about decode priority, chunked prefill, fairness, and preemption.</small></div>
+        <div class="target"><span class="n">04</span><strong>Benchmark honestly</strong><small>Measure TTFT, TPOT, throughput, and goodput under controlled offered load.</small></div>
+      </div>
+    </section>
+
+    <section id="pipeline">
+      <div class="sec-head"><div class="sec-no">01 — PATH</div><div><h2>From HTTP request to streamed token</h2><p>The engine is a control plane wrapped around a repeated model forward pass. Most production failures happen in the boundaries between these boxes.</p></div></div>
+      <div class="pipeline">
+        <div class="pipe">
+          <div class="node"><b>01 / ROUTER</b><small>Authenticate, rate-limit, choose replica, keep stream open.</small></div>
+          <div class="node"><b>02 / FRONTEND</b><small>Validate generation parameters; tokenize and apply chat template.</small></div>
+          <div class="node"><b>03 / ADMISSION</b><small>Check queue policy, context length, token budget, and KV capacity.</small></div>
+          <div class="node"><b>04 / SCHEDULER</b><small>Select prefill chunks and active decode sequences for this iteration.</small></div>
+          <div class="node"><b>05 / EXECUTOR</b><small>Run model kernels, read/write paged KV, sample next tokens.</small></div>
+          <div class="node"><b>06 / STREAM</b><small>Detokenize, apply stopping rules, return deltas, release blocks.</small></div>
+        </div>
+        <div class="critical"><span>CONTROL LOOP</span><p>At every iteration boundary: retire finished requests → free or retain their cache → admit work → build a ragged batch → launch kernels → sample → repeat. The CPU scheduler must stay ahead of the GPU or it becomes the bottleneck.</p></div>
+      </div>
+      <div class="split" style="margin-top:18px">
+        <div class="panel"><h3>Prefill and decode compete for the same GPU</h3><p>Prefill ingests many prompt tokens in parallel and tends toward compute-heavy matrix multiplications. Decode advances each sequence by one token and tends toward bandwidth-heavy weight and KV reads. Mixing them improves utilization but creates interference: a large prefill can delay the next decode step.</p><div class="equation">iteration work ≈ <span class="accent">Σ prefill chunk tokens</span> + <span class="accent"># active decode sequences</span></div></div>
+        <div class="panel"><h3>Three budgets, not one</h3><ul><li><strong>Sequence budget:</strong> how many requests may be active.</li><li><strong>Token budget:</strong> total scheduled tokens in an iteration.</li><li><strong>KV budget:</strong> physical blocks available after weights and workspace.</li></ul><p>Whichever is exhausted first becomes the admission constraint.</p></div>
+      </div>
+    </section>
+
+    <section id="batching">
+      <div class="sec-head"><div class="sec-no">02 — BATCHING</div><div><h2>The batch is a revolving door</h2><p>Static batching binds requests together until the slowest finishes. Continuous batching reschedules at iteration boundaries, so finished sequences leave and queued work enters.</p></div></div>
+      <div class="tabs" role="tablist" aria-label="Batching comparison"><button role="tab" aria-selected="true" data-tab="static">STATIC BATCH</button><button role="tab" aria-selected="false" data-tab="continuous">CONTINUOUS BATCH</button></div>
+      <div id="static" class="tabbody active panel" role="tabpanel">
+        <h3>Head-of-line blocking</h3><p>These four requests start together. A short request’s slot stays unusable until the longest request reaches its release barrier.</p>
+        <div class="timeline" aria-label="Static batching timeline">
+          <div class="lane"><label>A</label><i class="slot busy"></i><i class="slot busy"></i><i class="slot done"></i><i class="slot done"></i><i class="slot done"></i><i class="slot done"></i><i class="slot done"></i><i class="slot done"></i><i class="slot done"></i><i class="slot done"></i></div>
+          <div class="lane"><label>B</label><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot done"></i><i class="slot done"></i></div>
+          <div class="lane"><label>C</label><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot done"></i><i class="slot done"></i><i class="slot done"></i><i class="slot done"></i><i class="slot done"></i><i class="slot done"></i></div>
+          <div class="lane"><label>D</label><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i></div>
+        </div>
+        <p><strong>Failure mode:</strong> empty slots accumulate while new arrivals wait behind the batch barrier.</p>
+      </div>
+      <div id="continuous" class="tabbody panel" role="tabpanel">
+        <h3>Iteration-level scheduling</h3><p>When A finishes, E joins at the next scheduling point. F can take C’s slot later; no request-level release barrier is required.</p>
+        <div class="timeline" aria-label="Continuous batching timeline">
+          <div class="lane"><label>A→E</label><i class="slot busy"></i><i class="slot busy"></i><i class="slot new"></i><i class="slot new"></i><i class="slot new"></i><i class="slot new"></i><i class="slot new"></i><i class="slot new"></i><i class="slot new"></i><i class="slot new"></i></div>
+          <div class="lane"><label>B</label><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot done"></i><i class="slot done"></i></div>
+          <div class="lane"><label>C→F</label><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot new"></i><i class="slot new"></i><i class="slot new"></i><i class="slot new"></i><i class="slot new"></i><i class="slot new"></i></div>
+          <div class="lane"><label>D</label><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i><i class="slot busy"></i></div>
+        </div>
+        <p><strong>Key property:</strong> the active batch is ragged and changes over time. Attention kernels use per-sequence metadata rather than padding every row to one length.</p>
+      </div>
+
+      <div class="sim" style="margin-top:18px">
+        <div class="sim-head"><div><h3>Scheduler microscope</h3><p>A deterministic teaching model: four GPU slots, one decode step per tick. It illustrates admission and retirement—not engine performance.</p></div><div class="controls"><button class="primary" id="stepBtn">Advance one tick</button><button id="burstBtn">Add burst</button><button id="resetBtn">Reset</button></div></div>
+        <div class="board"><div class="bay"><div class="bay-title"><span>WAITING</span><span id="waitCount">0</span></div><div class="jobs" id="waiting"></div></div><div class="bay"><div class="bay-title"><span>ACTIVE BATCH</span><span>MAX 4</span></div><div class="jobs" id="active"></div></div><div class="bay"><div class="bay-title"><span>COMPLETE</span><span id="doneCount">0</span></div><div class="jobs" id="done"></div></div></div>
+        <div class="tick" id="tickText">ITERATION 0 · 4 requests admitted</div>
+      </div>
+    </section>
+
+    <section id="paging">
+      <div class="sec-head"><div class="sec-no">03 — MEMORY</div><div><h2>PagedAttention makes KV memory fungible</h2><p>Request lengths are unknown and change one token at a time. Fixed contiguous reservations either over-allocate, fragment memory, or require costly movement. Paging decouples a sequence’s logical KV positions from physical GPU blocks.</p></div></div>
+      <div class="allocator">
+        <div class="memory-map"><div class="mem-title">PHYSICAL KV BLOCK POOL · NON-CONTIGUOUS OWNERSHIP</div><div class="blocks" id="blocks" aria-label="Illustrative physical KV cache block map"></div><div class="legend2"><span><i style="background:#11667a"></i>SEQ A</span><span><i style="background:#a94b27"></i>SEQ B</span><span><i style="background:#637b26"></i>SEQ C</span><span><i style="border:1px dashed #789087"></i>FREE</span></div></div>
+        <div class="panel"><h3>Block allocation calculator</h3><p style="font-size:13px">Enter comma-separated live sequence lengths. “Reserved contiguous” models reserving the maximum context for every sequence; paged allocation rounds each sequence only to the block size. Metadata and runtime workspace are excluded.</p>
+          <div class="inputs">
+            <div class="field"><label for="lengths">LIVE SEQUENCE LENGTHS · TOKENS</label><input id="lengths" value="1640, 512, 3070, 980" inputmode="text"></div>
+            <div class="field"><label for="maxctx">MAX CONTEXT RESERVATION · TOKENS</label><input id="maxctx" type="number" min="128" max="1000000" value="8192"></div>
+            <div class="field"><label for="blocksize">TOKENS PER BLOCK</label><select id="blocksize"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></div>
+            <div class="field"><label for="kvbytes">KV BYTES PER TOKEN · ALL LAYERS</label><input id="kvbytes" type="number" min="1" value="131072"></div>
+          </div>
+          <div class="result-grid"><div class="result"><small>CONTIGUOUS RESERVATION</small><strong id="reserved">4.00 GiB</strong></div><div class="result"><small>PAGED ALLOCATION</small><strong id="paged">0.76 GiB</strong></div><div class="result"><small>RESERVATION AVOIDED</small><strong id="saved">81.0%</strong></div><div class="result"><small>INTERNAL TAIL WASTE</small><strong id="waste">0.4%</strong></div></div>
+        </div>
+      </div>
+      <div class="steps">
+        <div class="step"><span class="s">01 / LOGICAL</span><h3>Append by position</h3><p>Each sequence sees a logical list of KV blocks. The next token maps to a block index and offset.</p></div>
+        <div class="step"><span class="s">02 / MAP</span><h3>Resolve a block table</h3><p>The runtime maps logical blocks to any free physical blocks; contiguous virtual history does not require contiguous VRAM.</p></div>
+        <div class="step"><span class="s">03 / ATTEND</span><h3>Gather through the table</h3><p>The paged attention kernel follows the mapping while computing attention over the sequence’s cached history.</p></div>
+      </div>
+      <div class="split" style="margin-top:18px">
+        <div class="panel"><h3>What paging buys</h3><ul><li>Allocation close to actual sequence length.</li><li>Cheap growth one block at a time.</li><li>Fast reclamation when a request finishes.</li><li>Shared physical blocks for common prefixes or parallel samples, with copy-on-write semantics when needed.</li></ul></div>
+        <div class="panel"><h3>What paging costs</h3><ul><li>Block tables and allocator bookkeeping.</li><li>Indirection in the attention kernel.</li><li>Internal fragmentation in each sequence’s final block.</li><li>Policy complexity under pressure: recompute, swap, reject, or preempt.</li></ul></div>
+      </div>
+      <div class="lesson"><strong>Do not conflate two ideas.</strong><p><strong>PagedAttention</strong> is the kernel/data-structure design for non-contiguous KV blocks. <strong>Continuous batching</strong> is the scheduler’s iteration-level admission policy. They reinforce each other, but either concept can be discussed independently.</p></div>
+    </section>
+
+    <section id="scheduling">
+      <div class="sec-head"><div class="sec-no">04 — POLICY</div><div><h2>The scheduler decides who feels the load</h2><p>A token budget is a policy surface. Spend it on fresh prompts and TTFT improves; reserve it for active decodes and inter-token latency stabilizes.</p></div></div>
+      <div class="trade">
+        <div class="trade-card"><h3>Iteration token-budget mixer</h3><p style="color:var(--muted);font-size:13px">Simplified accounting: each active decode consumes one scheduled token; one queued prefill receives the remaining chunk budget.</p>
+          <div class="axis"><span>ACTIVE DECODE SEQUENCES</span><b id="decodeVal">64</b></div><input id="decodes" type="range" min="0" max="256" value="64" aria-label="Active decode sequences">
+          <div class="axis"><span>MAX BATCHED TOKENS</span><b id="budgetVal">2048</b></div><input id="budget" type="range" min="256" max="8192" step="256" value="2048" aria-label="Maximum batched tokens">
+          <div class="axis"><span>REQUESTED PREFILL CHUNK</span><b id="chunkVal">1024</b></div><input id="chunk" type="range" min="128" max="4096" step="128" value="1024" aria-label="Requested prefill chunk">
+          <div class="gauge" aria-label="Scheduled token utilization"><i id="budgetGauge"></i></div>
+          <div class="mix-output"><div><small>DECODE TOKENS</small><strong id="decodeOut">64</strong></div><div><small>PREFILL ADMITTED</small><strong id="prefillOut">1024</strong></div><div><small>UNUSED BUDGET</small><strong id="unusedOut">960</strong></div></div>
+          <p id="mixNote" style="font-size:13px;margin-top:15px"></p>
+        </div>
+        <div class="trade-card"><h3>Policy tensions</h3><div class="panel" style="padding:16px;margin-bottom:10px"><h4>DECODE-FIRST</h4><p style="font-size:13px">Protects TPOT for admitted users, but sustained decode load can make queued prompts wait. Add fairness or admission control.</p></div><div class="panel" style="padding:16px;margin-bottom:10px"><h4>PREFILL-FIRST</h4><p style="font-size:13px">Improves prompt admission and TTFT at light load; large prompts can interrupt decode cadence and inflate tail TPOT.</p></div><div class="panel" style="padding:16px"><h4>CHUNKED PREFILL</h4><p style="font-size:13px">Breaks long prompts into bounded pieces that fit around decode work. It controls interference but adds more scheduling rounds.</p></div></div>
+      </div>
+      <div class="steps">
+        <div class="step"><span class="s">PRESSURE / 01</span><h3>Recompute</h3><p>Drop a preempted request’s KV state and rebuild it later. Saves device memory; pays future prefill compute.</p></div>
+        <div class="step"><span class="s">PRESSURE / 02</span><h3>Swap / offload</h3><p>Move state to slower memory. Preserves compute; introduces transfer latency and bandwidth contention.</p></div>
+        <div class="step"><span class="s">PRESSURE / 03</span><h3>Reject / shed</h3><p>Protect existing SLOs by refusing new work or routing elsewhere. Often better than unbounded queueing.</p></div>
+      </div>
+      <div class="panel" style="margin-top:18px"><h3>Fairness is workload-specific</h3><p>FCFS is understandable but allows long prompts to create convoys. Shortest-job policies need an estimate of work and can starve large jobs. Priorities help interactive traffic but need quotas and aging. Prefix-aware routing raises cache hits but may imbalance replicas. There is no universal winner: define service classes, queue caps, cancellation behavior, and starvation bounds explicitly.</p></div>
+    </section>
+
+    <section id="metrics">
+      <div class="sec-head"><div class="sec-no">05 — MEASURE</div><div><h2>Throughput without latency is a half-truth</h2><p>Report the latency distribution at a stated offered load. A server can produce impressive tokens per second while violating every interactive request’s deadline.</p></div></div>
+      <div class="metrics">
+        <div class="metric"><code>TTFT</code><strong>Time to first token</strong><p>Queue + tokenization + prefill + first sample. Sensitive to prompt length and admission delay.</p><div class="formula-sm">first_chunk_time − request_start</div></div>
+        <div class="metric"><code>TPOT / ITL</code><strong>Inter-token cadence</strong><p>How long users wait between streamed tokens. Report distribution, not only a mean.</p><div class="formula-sm">decode_duration / (output_tokens − 1)</div></div>
+        <div class="metric"><code>E2E</code><strong>End-to-end latency</strong><p>Total request time. A function of TTFT, output length, decode cadence, and network overhead.</p><div class="formula-sm">last_chunk_time − request_start</div></div>
+        <div class="metric"><code>THROUGHPUT</code><strong>Useful tokens per second</strong><p>Separate prompt and output throughput; their computational regimes differ.</p><div class="formula-sm">Σ output_tokens / wall_time</div></div>
+        <div class="metric"><code>GOODPUT</code><strong>Requests meeting SLO</strong><p>Counts only completed requests whose TTFT and TPOT stay within defined limits.</p><div class="formula-sm">SLO-passing requests / second</div></div>
+        <div class="metric"><code>PRESSURE</code><strong>Queue + cache health</strong><p>Track queue delay, KV occupancy, prefix-hit rate, preemptions, recomputes, and OOM/rejections.</p><div class="formula-sm">observe before saturation</div></div>
+      </div>
+      <div class="split" style="margin-top:18px">
+        <div class="panel"><h3>Open-loop vs closed-loop load</h3><p><strong>Closed loop</strong> waits for a response before sending more and can hide overload by self-throttling. <strong>Open loop</strong> sends at a target arrival rate, exposing queue growth and the saturation knee. Use both, but name which one produced the graph.</p></div>
+        <div class="panel"><h3>Capacity from the workload</h3><div class="equation">request rate ≈ <span class="accent">output token throughput</span> ÷ mean output tokens/request</div><p style="margin-top:12px">This is only a first-order conversion. Prompt cost, variance, cache reuse, batching, and SLO misses determine usable capacity.</p></div>
+      </div>
+    </section>
+
+    <section id="engines">
+      <div class="sec-head"><div class="sec-no">06 — CHOICE</div><div><h2>vLLM, SGLang, and TGI</h2><p>Compare architecture and operational fit, not screenshots of peak benchmark numbers. Feature sets move quickly; pin a version and validate the exact model, kernel, quantization, and hardware.</p></div></div>
+      <div class="engine-table" role="table" aria-label="Serving engine comparison">
+        <div class="cell h">DIMENSION</div><div class="cell h">vLLM</div><div class="cell h">SGLang</div><div class="cell h">TGI</div>
+        <div class="cell row">Center of gravity</div><div class="cell" data-engine="vLLM"><b>General-purpose serving</b>Broad model and hardware integration around a high-throughput runtime.</div><div class="cell" data-engine="SGLang"><b>Structured workloads</b>Runtime plus language/programming layer, with strong prefix reuse.</div><div class="cell" data-engine="TGI"><b>HF-native server</b>Rust router, Python/model shards, streaming, batching, and Hub-era deployment patterns.</div>
+        <div class="cell row">Signature memory idea</div><div class="cell" data-engine="vLLM"><b>PagedAttention</b>Logical-to-physical KV block tables and dynamic block allocation.</div><div class="cell" data-engine="SGLang"><b>RadixAttention</b>Radix tree maps shared token prefixes to reusable, paged KV state.</div><div class="cell" data-engine="TGI"><b>Block allocator</b>Router schedules batches against token and memory limits; implementation varies by backend/model.</div>
+        <div class="cell row">Scheduling lens</div><div class="cell" data-engine="vLLM">Continuous batching, token budgets, chunked prefill, prefix caching, parallelism options.</div><div class="cell" data-engine="SGLang">Continuous batching plus cache-aware scheduling for repeated prefixes and structured execution.</div><div class="cell" data-engine="TGI">Continuous batching through router queues and scheduler controls.</div>
+        <div class="cell row">API surface</div><div class="cell" data-engine="vLLM">OpenAI-compatible server plus Python APIs.</div><div class="cell" data-engine="SGLang">OpenAI-compatible server plus frontend primitives for complex programs.</div><div class="cell" data-engine="TGI">HTTP/gRPC server and Hugging Face ecosystem conventions.</div>
+        <div class="cell row">2026 posture</div><div class="cell" data-engine="vLLM">Active candidate; benchmark for broad deployments.</div><div class="cell" data-engine="SGLang">Active candidate; benchmark when prefix reuse or structured generation matters.</div><div class="cell" data-engine="TGI">Official Hugging Face docs mark it in maintenance mode as of Dec. 11, 2025.<span class="flag">PLAN MIGRATION FOR NEW BUILDS</span></div>
+      </div>
+      <div class="decision"><div class="pick"><h3>Start with vLLM when…</h3><p>You want a widely adopted general serving baseline, broad model support, standard APIs, and a clear PagedAttention mental model.</p></div><div class="pick"><h3>Test SGLang when…</h3><p>Your traffic repeatedly shares system prompts, tool schemas, few-shot examples, or conversation prefixes—or structured programs are central.</p></div><div class="pick"><h3>Keep TGI when…</h3><p>You operate an existing stable deployment and migration risk exceeds short-term benefit. For new deployments, follow Hugging Face’s current guidance and evaluate alternatives.</p></div></div>
+      <div class="lesson"><strong>Selection rule.</strong><p>First eliminate engines that cannot run the exact model/precision/hardware/API you need. Then benchmark survivors with the same workload trace and SLO. Never transplant a vendor or project benchmark into a capacity plan.</p></div>
+    </section>
+
+    <section id="labs">
+      <div class="sec-head"><div class="sec-no">07 — LAB</div><div><h2>Build evidence, not intuition</h2><p>Use one small open model first. Pin every image and package version in your notes; “latest” is acceptable for exploration, not for a reproducible result.</p></div></div>
+      <div class="labs">
+        <article class="lab"><span class="labno">LAB 01 · BASELINE</span><h3>Trace one request</h3><p>Run one engine and a streaming client. Record timestamps at request send, first byte/token, each streamed delta, and completion.</p><ul><li>Prompt: 128, 512, 2K tokens</li><li>Output: fixed 128 tokens</li><li>Concurrency: 1</li><li>Warm up before measurement</li></ul><pre>record:
+engine + commit/version
+model + revision + dtype
+GPU + driver
+TTFT, TPOT p50/p95/p99</pre></article>
+        <article class="lab"><span class="labno">LAB 02 · LOAD</span><h3>Find the saturation knee</h3><p>Replay an open-loop arrival process. Increase request rate until queue delay and tail latency rise sharply.</p><ul><li>Keep input/output distribution fixed</li><li>Measure offered vs completed rate</li><li>Plot p50 and p99 separately</li><li>Count rejected/cancelled requests</li></ul><pre>for rate in 1 2 4 8 12 16; do
+  run_load --arrival-rate $rate \
+    --duration 180 --stream
+done</pre></article>
+        <article class="lab"><span class="labno">LAB 03 · POLICY A/B</span><h3>Stress prefix and prefill</h3><p>Alternate one variable at a time: prefix caching, prefill chunk size, token budget, and decode-heavy concurrency.</p><ul><li>50% requests share a long prefix</li><li>50% have unique prefixes</li><li>Repeat with randomized order</li><li>Watch KV hits and fairness</li></ul><pre>compare:
+throughput · TTFT · TPOT
+KV occupancy · cache hit rate
+preemptions · queue delay</pre></article>
+      </div>
+      <div class="worksheet"><h3>Result sheet</h3><div class="worksheet-grid"><div class="w"><small>HYPOTHESIS</small><strong>What should improve—and why?</strong></div><div class="w"><small>CONTROL</small><strong>What stays identical?</strong></div><div class="w"><small>SLO</small><strong>Which p99 limits define success?</strong></div><div class="w"><small>DECISION</small><strong>What evidence changes the config?</strong></div></div></div>
+    </section>
+
+    <section id="check">
+      <div class="sec-head"><div class="sec-no">08 — CHECK</div><div><h2>Can you reason at the whiteboard?</h2><p>Choose an answer. Explanations appear immediately; nothing is stored.</p></div></div>
+      <div class="quiz">
+        <div class="q" data-answer="b"><p>1. Why does continuous batching raise utilization with variable output lengths?</p><div class="answers"><button data-choice="a">It predicts every request’s exact finish time</button><button data-choice="b">It retires and admits requests at iteration boundaries</button><button data-choice="c">It makes all sequences the same length</button><button data-choice="d">It removes autoregressive dependencies</button></div><div class="feedback"></div></div>
+        <div class="q" data-answer="d"><p>2. What is the main memory advantage of paged KV allocation?</p><div class="answers"><button data-choice="a">KV state is moved to CPU every token</button><button data-choice="b">Attention no longer reads previous tokens</button><button data-choice="c">Every request reserves its maximum context contiguously</button><button data-choice="d">Logical sequences can grow into non-contiguous physical blocks</button></div><div class="feedback"></div></div>
+        <div class="q" data-answer="a"><p>3. A huge prefill raises p99 TPOT for active chats. Which first lever directly limits interference?</p><div class="answers"><button data-choice="a">Chunk the prefill and reserve decode budget</button><button data-choice="b">Increase every request’s max output tokens</button><button data-choice="c">Disable streaming</button><button data-choice="d">Measure only mean latency</button></div><div class="feedback"></div></div>
+        <div class="q" data-answer="c"><p>4. Why can a closed-loop benchmark hide overload?</p><div class="answers"><button data-choice="a">It cannot measure GPU time</button><button data-choice="b">It always sends malformed prompts</button><button data-choice="c">Slow responses reduce the generator’s future arrival rate</button><button data-choice="d">It forces static batching</button></div><div class="feedback"></div></div>
+        <div class="q" data-answer="b"><p>5. Which engine decision is defensible from this page alone?</p><div class="answers"><button data-choice="a">SGLang is always fastest</button><button data-choice="b">Benchmark active candidates on the exact workload and SLO</button><button data-choice="c">TGI must be shut down immediately</button><button data-choice="d">vLLM always has the lowest p99</button></div><div class="feedback"></div></div>
+      </div>
+    </section>
+
+    <section id="defend">
+      <div class="sec-head"><div class="sec-no">09 — DEFEND</div><div><h2>Ship only what you can explain</h2><p>A production serving choice is not “the benchmark winner.” It is a queueing policy, memory plan, failure model, and rollback strategy.</p></div></div>
+      <div class="defense"><div class="checklist"><h3>Whiteboard defense</h3><ul><li>Draw the request lifecycle and name every queue.</li><li>Derive KV bytes per token from model dimensions and dtype.</li><li>Explain why non-contiguous blocks reduce reservation waste.</li><li>State the admission rule when KV capacity is exhausted.</li><li>Explain prefill/decode interference and your fairness bound.</li><li>Define TTFT, TPOT, throughput, and goodput SLOs.</li><li>Show an open-loop load curve through saturation.</li><li>Describe cancellation, timeout, worker crash, and OOM behavior.</li><li>Name the pinned version, rollback trigger, and fallback engine.</li></ul></div><div class="failure"><h3>Failure drills</h3><dl><dt>One client disconnects mid-generation</dt><dd>How quickly are scheduler state and KV blocks reclaimed? Can cancellation race with a GPU iteration?</dd><dt>A 100K-token prompt arrives</dt><dd>Does it monopolize prefill, get chunked, enter a separate class, or get rejected?</dd><dt>Prefix-aware routing creates a hot replica</dt><dd>When does cache affinity lose to queue length? What is the spillover rule?</dd><dt>Traffic exceeds capacity for ten minutes</dt><dd>Which class is shed first? How are retries prevented from amplifying the overload?</dd></dl></div></div>
+    </section>
+
+    <section id="references">
+      <div class="sec-head"><div class="sec-no">10 — READ</div><div><h2>Primary sources</h2><p>Read architecture and paper claims before interpreting benchmarks. The engine landscape changes; the mechanisms endure.</p></div></div>
+      <div class="refs">
+        <div class="ref"><span class="rn">[01]</span><div><a href="https://docs.vllm.ai/en/v0.7.1/" target="_blank" rel="noreferrer">vLLM documentation</a><p>Official overview: PagedAttention, continuous batching, chunked prefill, prefix caching, kernels, and distributed serving.</p></div></div>
+        <div class="ref"><span class="rn">[02]</span><div><a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noreferrer">Efficient Memory Management for Large Language Model Serving with PagedAttention</a><p>Kwon et al., SOSP 2023. The foundational vLLM memory-management paper.</p></div></div>
+        <div class="ref"><span class="rn">[03]</span><div><a href="https://arxiv.org/abs/2312.07104?ref=research.character.ai" target="_blank" rel="noreferrer">SGLang: Efficient Execution of Structured Language Model Programs</a><p>Frontend/runtime design, RadixAttention, cache-aware execution, and constrained decoding.</p></div></div>
+        <div class="ref"><span class="rn">[04]</span><div><a href="https://huggingface.co/docs/text-generation-inference/architecture" target="_blank" rel="noreferrer">Text Generation Inference architecture</a><p>Router, scheduler, block allocator, model server, and batching controls.</p></div></div>
+        <div class="ref"><span class="rn">[05]</span><div><a href="https://github.com/huggingface/text-generation-inference/blob/HEAD/README.md" target="_blank" rel="noreferrer">TGI repository status</a><p>Official maintenance-mode notice and current recommendation to evaluate vLLM or SGLang.</p></div></div>
+        <div class="ref"><span class="rn">[06]</span><div><a href="https://huggingface.co/blog/continuous_batching" target="_blank" rel="noreferrer">Continuous batching from first principles</a><p>Ragged batches, chunked prefill, dynamic scheduling, and token-budget intuition.</p></div></div>
+      </div>
+    </section>
+
+    <section class="final">
+      <div class="next"><div><span>STAGE 04 COMPLETE</span><h3 style="margin-top:7px">You now have the serving control loop.</h3><p>Next: measurement and optimization—profiling kernels, tracing stalls, and turning system-level symptoms into evidence.</p></div><b style="font-size:34px;color:var(--orange)">→</b></div>
+    </section>
+  </main>
+</div>
+<script>
+  const navLinks=[...document.querySelectorAll('.rail nav a')];
+  const sections=[...document.querySelectorAll('main section[id]')];
+  const io=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){navLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id));}})},{rootMargin:'-20% 0px -70% 0px'});sections.forEach(s=>io.observe(s));
+
+  document.querySelectorAll('.tabs button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected','false'));document.querySelectorAll('.tabbody').forEach(p=>p.classList.remove('active'));btn.setAttribute('aria-selected','true');document.getElementById(btn.dataset.tab).classList.add('active');}));
+
+  const seed=[{id:'A',left:3,total:3},{id:'B',left:7,total:7},{id:'C',left:5,total:5},{id:'D',left:9,total:9},{id:'E',left:4,total:4},{id:'F',left:6,total:6},{id:'G',left:2,total:2}];
+  let queue=[],active=[],done=[],tick=0,nextCode=72;
+  function resetSim(){queue=seed.map(x=>({...x}));active=[];done=[];tick=0;admit();renderSim('4 requests admitted');}
+  function admit(){while(active.length<4&&queue.length)active.push(queue.shift());}
+  function renderJob(j,finished=false){const pct=finished?100:Math.round((1-j.left/j.total)*100);return `<div class="job ${finished?'donejob':''}"><b>${j.id}</b><div class="progress"><i style="width:${pct}%"></i></div><span>${finished?'done':j.left+' left'}</span></div>`}
+  function renderSim(msg=''){document.getElementById('waiting').innerHTML=queue.map(j=>renderJob(j)).join('')||'<span style="color:var(--muted);font-size:12px">queue empty</span>';document.getElementById('active').innerHTML=active.map(j=>renderJob(j)).join('')||'<span style="color:var(--muted);font-size:12px">idle</span>';document.getElementById('done').innerHTML=done.slice(-5).map(j=>renderJob(j,true)).join('')||'<span style="color:var(--muted);font-size:12px">none yet</span>';document.getElementById('waitCount').textContent=queue.length;document.getElementById('doneCount').textContent=done.length;document.getElementById('tickText').textContent=`ITERATION ${tick}${msg?' · '+msg:''}`;}
+  document.getElementById('stepBtn').addEventListener('click',()=>{tick++;active.forEach(j=>j.left--);const finished=active.filter(j=>j.left<=0);done.push(...finished);active=active.filter(j=>j.left>0);admit();renderSim(finished.length?`${finished.map(j=>j.id).join(', ')} retired; waiting work admitted`:'active batch advanced');});
+  document.getElementById('burstBtn').addEventListener('click',()=>{for(let i=0;i<3;i++){const id=String.fromCharCode(nextCode++);const total=2+((nextCode*3+i)%7);queue.push({id,left:total,total});}admit();renderSim('3 arrivals added');});document.getElementById('resetBtn').addEventListener('click',resetSim);resetSim();
+
+  function fmtBytes(v){if(!Number.isFinite(v)||v<0)return '—';const units=['B','KiB','MiB','GiB','TiB'];let i=0;while(v>=1024&&i<units.length-1){v/=1024;i++;}return `${v.toFixed(v>=100?0:v>=10?1:2)} ${units[i]}`}
+  const allocInputs=['lengths','maxctx','blocksize','kvbytes'].map(id=>document.getElementById(id));
+  function updateAllocator(){const lengths=document.getElementById('lengths').value.split(',').map(x=>Number(x.trim())).filter(x=>Number.isFinite(x)&&x>0).slice(0,32);const maxctx=Math.max(1,Number(document.getElementById('maxctx').value)||1);const block=Number(document.getElementById('blocksize').value);const bpt=Math.max(1,Number(document.getElementById('kvbytes').value)||1);const reserved=lengths.length*maxctx*bpt;const used=lengths.reduce((a,n)=>a+n,0);const allocTokens=lengths.reduce((a,n)=>a+Math.ceil(n/block)*block,0);const paged=allocTokens*bpt;const saved=reserved?Math.max(0,(1-paged/reserved)*100):0;const waste=allocTokens?Math.max(0,(allocTokens-used)/allocTokens*100):0;document.getElementById('reserved').textContent=fmtBytes(reserved);document.getElementById('paged').textContent=fmtBytes(paged);document.getElementById('saved').textContent=saved.toFixed(1)+'%';document.getElementById('waste').textContent=waste.toFixed(1)+'%';}
+  allocInputs.forEach(i=>i.addEventListener('input',updateAllocator));updateAllocator();
+  const blockClasses=['a','b','free','c','a','free','b','c','c','a','b','free','a','c','free','b','c','a','b','free','a','free','c','b'];document.getElementById('blocks').innerHTML=blockClasses.map((c,i)=>`<i class="block ${c} ${i===22?'tail':''}">${c==='free'?'':i}</i>`).join('');
+
+  const mixInputs=['decodes','budget','chunk'].map(id=>document.getElementById(id));
+  function updateMix(){const d=+document.getElementById('decodes').value,b=+document.getElementById('budget').value,c=+document.getElementById('chunk').value;const admitted=Math.max(0,Math.min(c,b-d)),unused=Math.max(0,b-d-admitted),used=Math.min(b,d+admitted);document.getElementById('decodeVal').textContent=d;document.getElementById('budgetVal').textContent=b;document.getElementById('chunkVal').textContent=c;document.getElementById('decodeOut').textContent=Math.min(d,b);document.getElementById('prefillOut').textContent=admitted;document.getElementById('unusedOut').textContent=unused;document.getElementById('budgetGauge').style.width=(used/b*100)+'%';const note=document.getElementById('mixNote');if(d>b){note.className='warning';note.textContent='Decode demand alone exceeds the token budget: the scheduler must cap active sequences, defer some work, or preempt.'}else if(admitted<c){note.className='';note.textContent=`The prefill is chunked to ${admitted} tokens so active decodes keep their iteration slots.`}else{note.className='';note.textContent='The requested prefill chunk and every active decode fit in this iteration.'}}
+  mixInputs.forEach(i=>i.addEventListener('input',updateMix));updateMix();
+
+  const explanations={
+    '1':{b:'Correct. The scheduler rebuilds the active batch at iteration boundaries, reclaiming finished slots without waiting for the longest request.',wrong:'Continuous batching does not change autoregressive dependencies or equalize lengths; it changes when admission and retirement decisions happen.'},
+    '2':{d:'Correct. Logical KV positions map through a block table, so a growing sequence can use any free physical blocks.',wrong:'Paging preserves attention history on the accelerator while replacing contiguous reservation with block-based allocation.'},
+    '3':{a:'Correct. Bounded prefill chunks can be interleaved with reserved decode work, reducing long pauses between decode iterations.',wrong:'The direct control is scheduler policy: cap prefill work per iteration and protect decode capacity.'},
+    '4':{c:'Correct. When latency rises, each virtual user waits longer before issuing its next request, unintentionally reducing offered load.',wrong:'The problem is feedback: a closed-loop generator self-throttles as responses slow.'},
+    '5':{b:'Correct. Architecture narrows the candidates; an apples-to-apples SLO benchmark makes the production decision.',wrong:'No universal latency or throughput ranking is defensible without the exact version, model, hardware, request distribution, and SLO.'}
+  };
+  document.querySelectorAll('.q').forEach((q,idx)=>{q.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{const ok=btn.dataset.choice===q.dataset.answer;q.querySelectorAll('button').forEach(b=>b.classList.remove('correct','wrong'));btn.classList.add(ok?'correct':'wrong');q.querySelector('.feedback').textContent=ok?explanations[idx+1][q.dataset.answer]:explanations[idx+1].wrong;}));});
+</script>
+</body>
+</html>

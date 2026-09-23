@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:," />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+  <title>Stage 6: Quantization and Compression</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f4ef;
+      --paper: #fbfbf7;
+      --ink: #171a18;
+      --muted: #5e655f;
+      --line: #cdd1ca;
+      --line-strong: #9ca39b;
+      --accent: #d84a1b;
+      --accent-2: #266b55;
+      --signal: #f1c94b;
+      --code: #171b19;
+      --code-ink: #edf2eb;
+      --code-muted: #a8b4ab;
+      --soft-green: #e3eee8;
+      --soft-orange: #f7e6dd;
+      --soft-yellow: #f7efcd;
+      --shadow: 0 20px 55px rgba(27, 32, 28, .10);
+      --max: 1180px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101311;
+        --paper: #171b18;
+        --ink: #f1f4ef;
+        --muted: #b2bbb3;
+        --line: #39413b;
+        --line-strong: #667168;
+        --accent: #ff7648;
+        --accent-2: #69c29f;
+        --signal: #e6bd3c;
+        --code: #090b0a;
+        --code-ink: #eef5ed;
+        --code-muted: #9ba79e;
+        --soft-green: #183127;
+        --soft-orange: #3a231d;
+        --soft-yellow: #342e18;
+        --shadow: 0 22px 60px rgba(0, 0, 0, .34);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px),
+        var(--bg);
+      background-size: 32px 32px;
+      color: var(--ink);
+      font-family: "IBM Plex Sans", sans-serif;
+      font-size: 16px;
+      line-height: 1.62;
+    }
+    a { color: inherit; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    ::selection { background: var(--signal); color: #111; }
+    .top-rule { height: 7px; background: linear-gradient(90deg, var(--accent) 0 32%, var(--signal) 32% 66%, var(--accent-2) 66%); }
+    .layout { width: min(var(--max), calc(100% - 36px)); margin: 0 auto; display: grid; grid-template-columns: 228px minmax(0, 1fr); gap: 42px; }
+    .rail { position: sticky; top: 20px; height: fit-content; padding: 32px 0; }
+    .rail .stage { font-family: "IBM Plex Mono", monospace; color: var(--accent); font-weight: 600; font-size: .78rem; letter-spacing: .08em; }
+    .rail h2 { font-family: "Source Serif 4", serif; font-size: 1.32rem; line-height: 1.12; margin: 8px 0 26px; }
+    .rail nav { border-left: 1px solid var(--line-strong); }
+    .rail a { display: block; text-decoration: none; color: var(--muted); padding: 7px 12px; font-size: .84rem; border-left: 3px solid transparent; margin-left: -2px; }
+    .rail a:hover, .rail a.active { color: var(--ink); border-color: var(--accent); background: var(--soft-orange); }
+    .rail .meta { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--line); font-family: "IBM Plex Mono", monospace; font-size: .71rem; color: var(--muted); }
+    main { min-width: 0; padding-bottom: 90px; }
+    .hero { background: var(--paper); border: 1px solid var(--line-strong); border-top: 0; box-shadow: var(--shadow); padding: clamp(32px, 7vw, 74px); position: relative; overflow: hidden; }
+    .hero::after { content: "4→8"; position: absolute; right: -14px; bottom: -52px; font-family: "IBM Plex Mono"; font-weight: 600; font-size: clamp(7rem, 20vw, 13rem); color: var(--line); opacity: .42; letter-spacing: -.1em; pointer-events: none; }
+    .kicker { display: inline-flex; align-items: center; gap: 10px; font-family: "IBM Plex Mono"; font-size: .76rem; font-weight: 600; color: var(--accent); }
+    .kicker::before { content: ""; width: 28px; height: 3px; background: var(--accent); }
+    h1 { max-width: 760px; font-family: "Source Serif 4", serif; font-size: clamp(2.65rem, 7vw, 5.9rem); line-height: .94; letter-spacing: -.055em; margin: 22px 0 28px; position: relative; z-index: 1; }
+    .deck { max-width: 720px; color: var(--muted); font-size: clamp(1.04rem, 2vw, 1.25rem); position: relative; z-index: 1; }
+    .hero-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; border: 1px solid var(--line-strong); background: var(--line-strong); margin-top: 44px; position: relative; z-index: 1; }
+    .hero-stat { padding: 18px; background: var(--paper); }
+    .hero-stat strong { display: block; font-family: "IBM Plex Mono"; font-size: 1.4rem; color: var(--accent-2); }
+    .hero-stat span { color: var(--muted); font-size: .82rem; }
+    .section { background: var(--paper); border: 1px solid var(--line-strong); margin-top: 24px; padding: clamp(26px, 5vw, 56px); scroll-margin-top: 20px; }
+    .section-number { font-family: "IBM Plex Mono"; color: var(--accent); font-size: .75rem; font-weight: 600; }
+    h2.section-title { font-family: "Source Serif 4", serif; font-size: clamp(2rem, 4vw, 3.2rem); line-height: 1.05; letter-spacing: -.035em; margin: 6px 0 12px; }
+    .lead { font-size: 1.08rem; color: var(--muted); max-width: 760px; margin-bottom: 30px; }
+    h3 { font-size: 1.15rem; line-height: 1.25; margin: 0 0 9px; }
+    h4 { font-family: "IBM Plex Mono"; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 8px; color: var(--accent-2); }
+    p { margin: 0 0 1rem; }
+    .callout { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start; background: var(--soft-yellow); border: 1px solid color-mix(in srgb, var(--signal) 65%, var(--line)); padding: 20px; margin: 26px 0; }
+    .callout .mark { font-family: "IBM Plex Mono"; font-weight: 600; font-size: 1.55rem; line-height: 1; }
+    .callout strong { display: block; margin-bottom: 3px; }
+    .equation { background: var(--code); color: var(--code-ink); padding: 22px; font-family: "IBM Plex Mono"; overflow-wrap: anywhere; margin: 20px 0; border-left: 6px solid var(--signal); }
+    .equation .muted { color: var(--code-muted); }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .concept { border-top: 4px solid var(--ink); background: var(--bg); padding: 20px; }
+    .concept p { font-size: .9rem; color: var(--muted); margin-bottom: 0; }
+    .concept.accent { border-color: var(--accent); }
+    .concept.green { border-color: var(--accent-2); }
+    .toy { border: 1px solid var(--line-strong); background: var(--bg); margin: 30px 0; }
+    .toy-head { padding: 17px 20px; border-bottom: 1px solid var(--line-strong); display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+    .toy-head span { font-family: "IBM Plex Mono"; font-size: .76rem; color: var(--muted); }
+    .toy-body { display: grid; grid-template-columns: 210px 1fr; gap: 28px; padding: 24px; }
+    .control label { display: block; font-weight: 600; margin-bottom: 7px; }
+    .control output { font-family: "IBM Plex Mono"; color: var(--accent); }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .control small { display: block; color: var(--muted); margin-top: 4px; }
+    .bars { min-height: 210px; display: flex; align-items: flex-end; gap: 5px; padding: 14px 4px 24px; border-bottom: 1px solid var(--line); position: relative; }
+    .bars::after { content: "tensor values →"; position: absolute; bottom: 0; right: 0; font-family: "IBM Plex Mono"; font-size: .65rem; color: var(--muted); }
+    .barpair { flex: 1; display: flex; gap: 2px; align-items: flex-end; height: 170px; }
+    .bar { flex: 1; min-width: 3px; transition: height .2s ease; }
+    .bar.original { background: var(--line-strong); }
+    .bar.quantized { background: var(--accent); opacity: .85; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line-strong); border: 1px solid var(--line-strong); margin-top: 18px; }
+    .metric { background: var(--paper); padding: 12px; }
+    .metric b { display: block; font-family: "IBM Plex Mono"; color: var(--accent-2); }
+    .metric span { font-size: .72rem; color: var(--muted); }
+    .precision-map { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--line-strong); border: 1px solid var(--line-strong); margin: 26px 0; }
+    .precision-col { background: var(--paper); padding: 20px; }
+    .bits { display: flex; gap: 3px; margin: 14px 0 18px; }
+    .bit { height: 26px; flex: 1; background: var(--line); }
+    .bit.sign { background: var(--accent); }
+    .bit.exp { background: var(--signal); }
+    .bit.mant { background: var(--accent-2); }
+    .precision-col ul { padding-left: 19px; margin: 0; color: var(--muted); font-size: .88rem; }
+    .compare { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: .9rem; }
+    .compare th { text-align: left; font-family: "IBM Plex Mono"; font-size: .72rem; color: var(--muted); padding: 11px; border-bottom: 2px solid var(--ink); vertical-align: bottom; }
+    .compare td { text-align: left; padding: 13px 11px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .compare tr:last-child td { border-bottom: 0; }
+    .tag { display: inline-block; font-family: "IBM Plex Mono"; font-size: .68rem; padding: 2px 7px; background: var(--soft-green); color: var(--accent-2); white-space: nowrap; }
+    .pipeline { display: grid; grid-template-columns: repeat(5, 1fr); align-items: stretch; gap: 0; margin: 26px 0; }
+    .step { border: 1px solid var(--line-strong); padding: 14px; min-height: 126px; position: relative; background: var(--paper); }
+    .step + .step { border-left: 0; }
+    .step .n { font-family: "IBM Plex Mono"; font-size: .68rem; color: var(--accent); }
+    .step strong { display: block; line-height: 1.2; margin: 11px 0 6px; }
+    .step p { font-size: .78rem; color: var(--muted); margin: 0; }
+    .step:not(:last-child)::after { content: ">"; position: absolute; right: -8px; top: 48%; z-index: 2; font-family: "IBM Plex Mono"; color: var(--accent); background: var(--paper); }
+    .sparsity-demo { display: grid; grid-template-columns: 1fr auto 1fr; gap: 22px; align-items: center; margin: 28px 0; }
+    .matrix { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; padding: 18px; background: var(--bg); border: 1px solid var(--line-strong); }
+    .cell { aspect-ratio: 1; display: grid; place-items: center; background: var(--accent-2); color: #fff; font-family: "IBM Plex Mono"; font-size: .67rem; }
+    .cell.zero { background: var(--line); color: var(--muted); }
+    .arrow { font-family: "IBM Plex Mono"; font-size: 2rem; color: var(--accent); }
+    .note-row { display: grid; grid-template-columns: 125px 1fr; border-top: 1px solid var(--line); padding: 14px 0; }
+    .note-row:last-child { border-bottom: 1px solid var(--line); }
+    .note-row b { font-family: "IBM Plex Mono"; font-size: .74rem; color: var(--accent); }
+    .decision { display: grid; grid-template-columns: repeat(2, 1fr); border: 1px solid var(--line-strong); margin: 28px 0; }
+    .decision > div { padding: 22px; border-bottom: 1px solid var(--line); }
+    .decision > div:nth-child(odd) { border-right: 1px solid var(--line); }
+    .decision > div:nth-last-child(-n+2) { border-bottom: 0; }
+    .decision small { display: block; color: var(--muted); margin-top: 4px; }
+    .codeblock { position: relative; background: var(--code); color: var(--code-ink); margin: 18px 0 28px; }
+    .codebar { display: flex; justify-content: space-between; align-items: center; padding: 9px 14px; border-bottom: 1px solid #303632; font-family: "IBM Plex Mono"; font-size: .7rem; color: var(--code-muted); }
+    .copy { appearance: none; border: 1px solid #465048; background: transparent; color: var(--code-ink); padding: 4px 9px; cursor: pointer; font-family: "IBM Plex Mono"; font-size: .68rem; }
+    .copy:hover { border-color: var(--signal); color: var(--signal); }
+    pre { margin: 0; padding: 20px; overflow-x: auto; white-space: pre; font: .78rem/1.62 "IBM Plex Mono", monospace; }
+    .cm { color: #9da89f; } .kw { color: #f2ce60; } .fn { color: #75d1a7; } .st { color: #ff9b78; }
+    .protocol { counter-reset: protocol; }
+    .protocol-item { counter-increment: protocol; display: grid; grid-template-columns: 58px 1fr; gap: 14px; padding: 20px 0; border-top: 1px solid var(--line); }
+    .protocol-item::before { content: counter(protocol, decimal-leading-zero); font: 600 1.1rem "IBM Plex Mono"; color: var(--accent); }
+    .protocol-item:last-child { border-bottom: 1px solid var(--line); }
+    .protocol-item p { color: var(--muted); margin: 4px 0 0; font-size: .9rem; }
+    .scorecard { display: grid; grid-template-columns: 1.35fr repeat(4, .75fr); border: 1px solid var(--line-strong); margin-top: 24px; }
+    .scorecard > div { padding: 12px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: .81rem; min-width: 0; }
+    .scorecard > div:nth-child(5n) { border-right: 0; }
+    .scorecard > div:nth-last-child(-n+5) { border-bottom: 0; }
+    .scorecard .head { background: var(--bg); font-family: "IBM Plex Mono"; font-size: .68rem; color: var(--muted); }
+    .scorecard .good { color: var(--accent-2); font-weight: 600; }
+    .scorecard .warn { color: var(--accent); font-weight: 600; }
+    .lab-banner { background: var(--accent-2); color: white; padding: 26px; display: flex; justify-content: space-between; gap: 24px; align-items: center; margin: 28px 0; }
+    .lab-banner strong { font-family: "Source Serif 4"; font-size: 1.7rem; }
+    .lab-banner span { font-family: "IBM Plex Mono"; font-size: .76rem; opacity: .85; }
+    .checkpoint { border: 1px solid var(--line-strong); margin: 18px 0; }
+    .checkpoint button { width: 100%; border: 0; background: var(--bg); display: flex; justify-content: space-between; gap: 16px; padding: 15px 18px; text-align: left; cursor: pointer; font-weight: 600; }
+    .checkpoint button:hover { background: var(--soft-green); }
+    .checkpoint .answer { display: none; padding: 18px; border-top: 1px solid var(--line); color: var(--muted); }
+    .checkpoint.open .answer { display: block; }
+    .checkpoint.open button span { transform: rotate(45deg); }
+    .sources { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .source { display: block; border-top: 3px solid var(--line-strong); padding: 15px 0; text-decoration: none; }
+    .source:hover { border-color: var(--accent); }
+    .source b { display: block; }
+    .source span { color: var(--muted); font-size: .82rem; }
+    .toast { position: fixed; right: 20px; bottom: 20px; background: var(--ink); color: var(--paper); padding: 11px 15px; font-family: "IBM Plex Mono"; font-size: .75rem; opacity: 0; transform: translateY(10px); pointer-events: none; transition: .2s ease; z-index: 10; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    @media (max-width: 900px) {
+      .layout { display: block; width: min(100% - 24px, 800px); }
+      .rail { position: relative; top: 0; padding: 16px 0; }
+      .rail h2, .rail .meta { display: none; }
+      .rail nav { display: flex; flex-wrap: wrap; border: 0; gap: 6px; }
+      .rail a { white-space: nowrap; border: 1px solid var(--line); margin: 0; background: var(--paper); padding: 7px 10px; }
+      .rail a.active { border-color: var(--accent); }
+      .precision-map { grid-template-columns: 1fr; }
+      .toy-body { grid-template-columns: 1fr; }
+      .pipeline { grid-template-columns: 1fr; }
+      .step + .step { border-left: 1px solid var(--line-strong); border-top: 0; }
+      .step { min-height: 0; }
+      .step:not(:last-child)::after { content: "↓"; top: auto; bottom: -15px; right: 50%; }
+      .sparsity-demo { grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); justify-self: center; }
+      .scorecard { grid-template-columns: 1fr 1fr; }
+      .scorecard > div { border: 0; border-bottom: 1px solid var(--line); }
+      .scorecard > div:nth-child(5n) { border-right: 0; }
+      .scorecard > div:nth-last-child(-n+5) { border-bottom: 1px solid var(--line); }
+      .scorecard .head { display: none; }
+      .scorecard > div:nth-child(5n+1) { grid-column: 1 / -1; background: var(--bg); font-weight: 600; border-top: 2px solid var(--ink); }
+      .scorecard > div::before { content: attr(data-label); display: block; font: .62rem "IBM Plex Mono"; color: var(--muted); }
+    }
+    @media (max-width: 620px) {
+      body { background-size: 24px 24px; }
+      .layout { width: calc(100% - 16px); }
+      .hero, .section { padding: 24px 19px; }
+      .hero-grid, .grid-2, .grid-3, .decision, .sources { grid-template-columns: 1fr; }
+      .hero-stat { padding: 13px; }
+      .decision > div { border-right: 0 !important; border-bottom: 1px solid var(--line) !important; }
+      .decision > div:last-child { border-bottom: 0 !important; }
+      .toy-body { padding: 16px; }
+      .bars { gap: 3px; }
+      .metrics { grid-template-columns: 1fr; }
+      .precision-col { padding: 16px; }
+      .compare, .compare tbody, .compare tr, .compare td { display: block; }
+      .compare thead { display: none; }
+      .compare tr { border-top: 2px solid var(--ink); padding: 10px 0; }
+      .compare td { display: grid; grid-template-columns: 110px 1fr; gap: 8px; padding: 7px 0; border: 0; }
+      .compare td::before { content: attr(data-label); font: .68rem "IBM Plex Mono"; color: var(--muted); }
+      .note-row { grid-template-columns: 1fr; gap: 3px; }
+      .matrix { padding: 10px; gap: 3px; }
+      .cell { font-size: .55rem; }
+      pre { font-size: .7rem; padding: 16px; white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible; }
+      .lab-banner { display: block; }
+      .lab-banner span { display: block; margin-top: 8px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-rule"></div>
+  <div class="layout">
+    <aside class="rail" aria-label="Course navigation">
+      <div class="stage">STAGE 06 / 12</div>
+      <h2>Quantization &amp; Compression</h2>
+      <nav>
+        <a href="#brief">Brief</a>
+        <a href="#mechanics">Mechanics</a>
+        <a href="#formats">FP8 ↔ INT8</a>
+        <a href="#weight-only">AWQ ↔ GPTQ</a>
+        <a href="#sparsity">Sparsity</a>
+        <a href="#decision">Decision map</a>
+        <a href="#measure">Measurement</a>
+        <a href="#lab">Lab</a>
+        <a href="#checks">Checks</a>
+        <a href="#sources">Sources</a>
+      </nav>
+      <div class="meta">READ 55 MIN<br>LAB 75–120 MIN<br>SHIP: BENCHMARK MEMO</div>
+    </aside>
+
+    <main>
+      <header class="hero" id="brief">
+        <div class="kicker">SYSTEMS COURSE · STAGE 6</div>
+        <h1>Precision is a systems knob.</h1>
+        <p class="deck">FP8, INT8, AWQ, GPTQ, and sparsity are not interchangeable “compression settings.” Each moves a different bottleneck—and each fails in a different way. Learn to choose by workload, kernel path, and measured quality loss.</p>
+        <div class="hero-grid" aria-label="Stage outcomes">
+          <div class="hero-stat"><strong>01</strong><span>Model the bytes, scales, and compute path</span></div>
+          <div class="hero-stat"><strong>02</strong><span>Separate theoretical compression from realized speed</span></div>
+          <div class="hero-stat"><strong>03</strong><span>Produce a quality–latency Pareto frontier</span></div>
+        </div>
+      </header>
+
+      <section class="section" aria-labelledby="frame-title">
+        <div class="section-number">00 / OPERATING FRAME</div>
+        <h2 class="section-title" id="frame-title">Start with the bottleneck</h2>
+        <p class="lead">Quantization pays when it removes the resource limiting your phase of inference. The same checkpoint can help decode, do little for prefill, or even regress if its kernel path adds unpacking overhead.</p>
+        <div class="grid-3">
+          <article class="concept accent"><h3>Decode</h3><p>Usually weight-bandwidth constrained at small batches. Weight-only INT4 often shines because fewer bytes cross HBM per token.</p></article>
+          <article class="concept green"><h3>Prefill</h3><p>More compute-dense. W8A8 or FP8 can exploit native low-precision matrix units when shapes and kernels align.</p></article>
+          <article class="concept"><h3>Long context</h3><p>KV cache can dominate capacity and traffic. Weight compression alone does not shrink the cache.</p></article>
+        </div>
+        <div class="callout"><div class="mark">!</div><div><strong>The prime directive</strong>Never claim “4× smaller means 4× faster.” File size, resident memory, HBM traffic, arithmetic throughput, launch overhead, and end-to-end latency are different quantities.</div></div>
+        <div class="equation"><span class="muted">lower bound per generated token ≈</span><br>bytes of weights read ÷ sustained memory bandwidth<br><span class="muted">…until batching, cache traffic, compute, or scheduler overhead becomes dominant.</span></div>
+      </section>
+
+      <section class="section" id="mechanics" aria-labelledby="mechanics-title">
+        <div class="section-number">01 / MECHANICS</div>
+        <h2 class="section-title" id="mechanics-title">Quantization is a mapping</h2>
+        <p class="lead">An affine integer quantizer stores a small integer <em>q</em> plus metadata. Dequantization reconstructs an approximation, not the original value.</p>
+        <div class="equation">q = clamp(round(x / s) + z, q<sub>min</sub>, q<sub>max</sub>)<br>x̂ = s · (q − z)<br><span class="muted">s = scale · z = zero point · x̂ = reconstructed value</span></div>
+        <div class="grid-2">
+          <article class="concept accent"><h3>Granularity controls error</h3><p>Per-tensor uses one scale. Per-channel gives each output channel a scale. Per-group shares a scale across a small block of weights. Finer granularity usually lowers error but increases metadata and kernel complexity.</p></article>
+          <article class="concept green"><h3>Clipping controls range</h3><p>A scale wide enough for outliers wastes levels on the dense center. A tighter scale resolves common values but clips tails. Calibration chooses that compromise.</p></article>
+        </div>
+
+        <div class="toy" aria-labelledby="toy-title">
+          <div class="toy-head"><strong id="toy-title">Quantizer microscope</strong><span>illustrative tensor · deterministic</span></div>
+          <div class="toy-body">
+            <div>
+              <div class="control"><label for="bits">Bit width <output id="bitsOut">4-bit</output></label><input id="bits" type="range" min="2" max="8" value="4" step="1"><small>Signed symmetric levels</small></div>
+              <div class="control" style="margin-top:22px"><label for="clip">Clip percentile <output id="clipOut">100%</output></label><input id="clip" type="range" min="70" max="100" value="100" step="1"><small>Lower values resolve the center but clip tails</small></div>
+              <div class="metrics">
+                <div class="metric"><b id="levelMetric">15</b><span>usable signed levels</span></div>
+                <div class="metric"><b id="mseMetric">0.000</b><span>mean squared error</span></div>
+                <div class="metric"><b id="satMetric">0%</b><span>values clipped</span></div>
+              </div>
+            </div>
+            <div><div class="bars" id="bars" aria-label="Original and quantized tensor values"></div><p style="font-size:.75rem;color:var(--muted);margin:.8rem 0 0"><span style="color:var(--line-strong)">■</span> original &nbsp; <span style="color:var(--accent)">■</span> reconstructed</p></div>
+          </div>
+        </div>
+        <div class="note-row"><b>STATIC PTQ</b><div>Calibration observes representative data, then fixes scales before deployment.</div></div>
+        <div class="note-row"><b>DYNAMIC</b><div>Activation scales are computed at runtime. More adaptive, but scale computation and conversion cost latency.</div></div>
+        <div class="note-row"><b>WEIGHT-ONLY</b><div>Weights are packed low-bit; activations stay FP16/BF16. The kernel dequantizes weights on the fly near the matrix multiply.</div></div>
+      </section>
+
+      <section class="section" id="formats" aria-labelledby="formats-title">
+        <div class="section-number">02 / NUMERIC FORMATS</div>
+        <h2 class="section-title" id="formats-title">FP8 and INT8 spend bits differently</h2>
+        <p class="lead">INT8 buys uniform precision inside a calibrated interval. FP8 buys logarithmic dynamic range through an exponent. Both occupy one byte; their error surfaces and hardware paths differ.</p>
+        <div class="precision-map">
+          <article class="precision-col"><h3>INT8</h3><div class="bits" aria-label="Eight integer bits"><span class="bit sign"></span><span class="bit mant"></span><span class="bit mant"></span><span class="bit mant"></span><span class="bit mant"></span><span class="bit mant"></span><span class="bit mant"></span><span class="bit mant"></span></div><ul><li>Uniform step after scaling</li><li>Usually explicit scale; optional zero point</li><li>Outliers stretch the interval</li></ul></article>
+          <article class="precision-col"><h3>FP8 E4M3</h3><div class="bits" aria-label="One sign, four exponent, three mantissa bits"><span class="bit sign"></span><span class="bit exp"></span><span class="bit exp"></span><span class="bit exp"></span><span class="bit exp"></span><span class="bit mant"></span><span class="bit mant"></span><span class="bit mant"></span></div><ul><li>More significand precision</li><li>Smaller range than E5M2</li><li>Common for forward tensors</li></ul></article>
+          <article class="precision-col"><h3>FP8 E5M2</h3><div class="bits" aria-label="One sign, five exponent, two mantissa bits"><span class="bit sign"></span><span class="bit exp"></span><span class="bit exp"></span><span class="bit exp"></span><span class="bit exp"></span><span class="bit exp"></span><span class="bit mant"></span><span class="bit mant"></span></div><ul><li>Wider dynamic range</li><li>Fewer significand bits</li><li>Often useful where range matters</li></ul></article>
+        </div>
+        <table class="compare">
+          <thead><tr><th>Scheme</th><th>Typical path</th><th>Primary win</th><th>Common failure mode</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Scheme"><strong>W8A8 INT8</strong></td><td data-label="Typical path">Quantized weights + activations; integer tensor-core or vector path</td><td data-label="Primary win">Compute and bandwidth</td><td data-label="Failure mode">Activation outliers; calibration mismatch</td></tr>
+            <tr><td data-label="Scheme"><strong>W8A16</strong></td><td data-label="Typical path">INT8 weights, high-precision activations</td><td data-label="Primary win">Weight traffic</td><td data-label="Failure mode">Unpacking overhead; weaker prefill gains</td></tr>
+            <tr><td data-label="Scheme"><strong>W8A8 FP8</strong></td><td data-label="Typical path">Scaled FP8 GEMM on supported accelerators</td><td data-label="Primary win">Compute + compact tensors with floating range</td><td data-label="Failure mode">Unsupported hardware or unfused conversions</td></tr>
+            <tr><td data-label="Scheme"><strong>FP8 KV</strong></td><td data-label="Typical path">Cache stored in FP8, converted in attention kernel</td><td data-label="Primary win">Long-context capacity and cache traffic</td><td data-label="Failure mode">Attention quality sensitivity; scale granularity</td></tr>
+          </tbody>
+        </table>
+        <div class="callout"><div class="mark">→</div><div><strong>Hardware-first rule</strong>Check the serving engine’s exact model × quantizer × GPU support matrix before conversion. A checkpoint format is not a promise that a fast kernel exists.</div></div>
+      </section>
+
+      <section class="section" id="weight-only" aria-labelledby="weight-title">
+        <div class="section-number">03 / WEIGHT-ONLY INT4</div>
+        <h2 class="section-title" id="weight-title">AWQ protects salience. GPTQ compensates error.</h2>
+        <p class="lead">Both typically produce low-bit weight-only models, often W4A16. They differ in how they decide what quantization error is acceptable.</p>
+        <div class="grid-2">
+          <article class="concept accent"><h4>AWQ</h4><h3>Activation-aware scaling</h3><p>Calibration activations reveal salient channels. An equivalent scaling transformation makes important weight channels easier to quantize, without mixed-precision storage or backpropagation.</p></article>
+          <article class="concept green"><h4>GPTQ</h4><h3>Second-order compensation</h3><p>Layers are quantized sequentially using approximate Hessian information. As columns are rounded, later weights are updated to compensate for induced output error.</p></article>
+        </div>
+        <div class="pipeline" aria-label="Weight-only quantization pipeline">
+          <div class="step"><span class="n">01</span><strong>Sample calibration</strong><p>Prompts representative of lengths, languages, and domains.</p></div>
+          <div class="step"><span class="n">02</span><strong>Collect statistics</strong><p>Activation salience for AWQ; curvature proxy for GPTQ.</p></div>
+          <div class="step"><span class="n">03</span><strong>Quantize groups</strong><p>Choose bit width, group size, scale, and zero-point scheme.</p></div>
+          <div class="step"><span class="n">04</span><strong>Pack weights</strong><p>Match the exact layout expected by the serving kernel.</p></div>
+          <div class="step"><span class="n">05</span><strong>Re-evaluate</strong><p>Quality and systems metrics against the same baseline.</p></div>
+        </div>
+        <table class="compare">
+          <thead><tr><th>Question</th><th>AWQ</th><th>GPTQ</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Question">Optimization signal</td><td data-label="AWQ">Activation magnitude identifies salient channels</td><td data-label="GPTQ">Approximate second-order reconstruction objective</td></tr>
+            <tr><td data-label="Question">Weight update</td><td data-label="AWQ">Equivalent per-channel scaling before rounding</td><td data-label="GPTQ">Sequential quantize-and-compensate update</td></tr>
+            <tr><td data-label="Question">Calibration sensitivity</td><td data-label="AWQ">Can shift if salience differs from deployment prompts</td><td data-label="GPTQ">Can shift if curvature estimate misses deployment distribution</td></tr>
+            <tr><td data-label="Question">Deployment reality</td><td data-label="AWQ">Excellent when engine has native packed AWQ kernels</td><td data-label="GPTQ">Broad ecosystem support, but packing variants matter</td></tr>
+          </tbody>
+        </table>
+        <div class="equation"><span class="muted">Approximate storage, ignoring metadata:</span><br>model GiB ≈ parameters × bits_per_weight ÷ 8 ÷ 2³⁰<br><span class="muted">7B @ 16-bit ≈ 13.0 GiB · 7B @ 4-bit ≈ 3.26 GiB, before scales, zeros, embeddings, runtime buffers, and KV cache.</span></div>
+      </section>
+
+      <section class="section" id="sparsity" aria-labelledby="sparsity-title">
+        <div class="section-number">04 / SPARSITY</div>
+        <h2 class="section-title" id="sparsity-title">Zeros matter only when hardware can skip them</h2>
+        <p class="lead">Unstructured pruning may compress a file yet lose to dense kernels. Structured patterns trade freedom for predictable acceleration. NVIDIA’s 2:4 pattern keeps two nonzero values in each contiguous group of four supported elements.</p>
+        <div class="sparsity-demo">
+          <div><h4>Dense</h4><div class="matrix" id="denseMatrix" aria-label="Dense matrix"></div></div>
+          <div class="arrow">→</div>
+          <div><h4>2:4 structured</h4><div class="matrix" id="sparseMatrix" aria-label="Two out of four structured sparse matrix"></div></div>
+        </div>
+        <div class="grid-3">
+          <article class="concept"><h3>Unstructured</h3><p>Any element may be zero. Highest pruning freedom; usually needs specialized sparse kernels and metadata.</p></article>
+          <article class="concept accent"><h3>N:M structured</h3><p>Exactly N nonzeros per M-element group. Constrained enough for hardware to exploit predictably.</p></article>
+          <article class="concept green"><h3>Block sparse</h3><p>Entire tiles are zero. Coarser but easier to map to matrix kernels and memory transactions.</p></article>
+        </div>
+        <div class="callout"><div class="mark">×</div><div><strong>Compression methods can interfere</strong>Quantization changes weight error; pruning removes weights. Applying both independently may compound quality loss, and the resulting quantized-sparse layout still needs a fused kernel to realize a speedup.</div></div>
+      </section>
+
+      <section class="section" id="decision" aria-labelledby="decision-title">
+        <div class="section-number">05 / DECISION MAP</div>
+        <h2 class="section-title" id="decision-title">Choose the candidate, not the winner</h2>
+        <p class="lead">These are starting hypotheses. Your model, prompt distribution, batch scheduler, and accelerator decide the final choice.</p>
+        <div class="decision">
+          <div><span class="tag">SMALL-BATCH DECODE</span><h3 style="margin-top:9px">Start with W4A16 AWQ/GPTQ</h3><small>Goal: cut weight bandwidth and fit a larger model. Verify native kernels and group-size support.</small></div>
+          <div><span class="tag">HIGH-THROUGHPUT PREFILL</span><h3 style="margin-top:9px">Start with FP8 or W8A8</h3><small>Goal: use low-precision matrix throughput, not only compact storage.</small></div>
+          <div><span class="tag">LONG CONTEXT</span><h3 style="margin-top:9px">Add KV-cache quantization</h3><small>Goal: increase cache capacity and reduce attention memory traffic. Evaluate long-context retrieval.</small></div>
+          <div><span class="tag">SUPPORTED ACCELERATOR</span><h3 style="margin-top:9px">Test structured sparsity</h3><small>Goal: accelerate dense linear layers with a hardware-supported pattern. Measure actual kernel occupancy.</small></div>
+        </div>
+        <table class="compare">
+          <thead><tr><th>If this is true…</th><th>Then test…</th><th>Do not assume…</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Signal">Model barely misses one GPU</td><td data-label="Test">INT8 or INT4 weight-only</td><td data-label="Caution">Checkpoint size equals peak runtime memory</td></tr>
+            <tr><td data-label="Signal">TTFT dominates</td><td data-label="Test">FP8/W8A8, chunked prefill, batching</td><td data-label="Caution">W4A16 decode gains transfer to prefill</td></tr>
+            <tr><td data-label="Signal">ITL dominates at batch 1–4</td><td data-label="Test">Packed W4A16 with fused dequant GEMM</td><td data-label="Caution">Any “4-bit” repository uses the same kernel layout</td></tr>
+            <tr><td data-label="Signal">OOM only on long prompts</td><td data-label="Test">KV precision and cache policy</td><td data-label="Caution">Weight compression shrinks token-dependent memory</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section" id="measure" aria-labelledby="measure-title">
+        <div class="section-number">06 / MEASUREMENT</div>
+        <h2 class="section-title" id="measure-title">Build a Pareto frontier</h2>
+        <p class="lead">A compressed model ships only when it is nondominated: no alternative is both higher quality and faster (or cheaper) under the same workload.</p>
+        <div class="protocol">
+          <div class="protocol-item"><div><h3>Freeze the workload</h3><p>Pin model revision, tokenizer, engine, GPU clocks, request traces, prompt/output lengths, batch policy, and sampling settings. Record warmup separately.</p></div></div>
+          <div class="protocol-item"><div><h3>Measure four systems axes</h3><p>Peak resident memory, time to first token (TTFT), inter-token latency (ITL), and throughput at target concurrency. Report median plus p95/p99—not only averages.</p></div></div>
+          <div class="protocol-item"><div><h3>Use layered quality gates</h3><p>Start with perplexity or token-level divergence, then task benchmarks, then adversarial slices: long context, code, math, rare languages, JSON constraints, and refusal behavior.</p></div></div>
+          <div class="protocol-item"><div><h3>Attribute the gain</h3><p>Profile kernel names, achieved bandwidth, tensor-core utilization, conversion kernels, and scheduler idle time. Prove the intended low-precision kernel executed.</p></div></div>
+          <div class="protocol-item"><div><h3>Repeat and bound variance</h3><p>Run enough repetitions to distinguish a real change from noise. Keep the same prompt order or random seed; report error bars where variance matters.</p></div></div>
+        </div>
+        <div class="scorecard" aria-label="Example benchmark scorecard structure">
+          <div class="head">Candidate</div><div class="head">Quality Δ</div><div class="head">TTFT p95</div><div class="head">ITL p95</div><div class="head">Peak GiB</div>
+          <div>BF16 baseline</div><div data-label="Quality Δ">0.00</div><div data-label="TTFT p95">baseline</div><div data-label="ITL p95">baseline</div><div data-label="Peak GiB">baseline</div>
+          <div>FP8 W8A8</div><div class="good" data-label="Quality Δ">measure</div><div class="good" data-label="TTFT p95">measure</div><div data-label="ITL p95">measure</div><div class="good" data-label="Peak GiB">measure</div>
+          <div>INT4 AWQ</div><div class="warn" data-label="Quality Δ">measure</div><div data-label="TTFT p95">measure</div><div class="good" data-label="ITL p95">measure</div><div class="good" data-label="Peak GiB">measure</div>
+          <div>INT4 GPTQ</div><div class="warn" data-label="Quality Δ">measure</div><div data-label="TTFT p95">measure</div><div class="good" data-label="ITL p95">measure</div><div class="good" data-label="Peak GiB">measure</div>
+        </div>
+        <div class="callout"><div class="mark">✓</div><div><strong>Acceptance rule template</strong>Ship only if quality regression stays inside a predeclared budget, p95 latency improves under the production trace, peak memory meets capacity targets, and no critical behavioral slice regresses.</div></div>
+      </section>
+
+      <section class="section" id="lab" aria-labelledby="lab-title">
+        <div class="section-number">07 / HANDS-ON LAB</div>
+        <h2 class="section-title" id="lab-title">Quantize, benchmark, defend</h2>
+        <p class="lead">The lab has two layers: a zero-dependency numerical experiment, then a real serving benchmark using your engine’s supported checkpoints. The deliverable is a one-page decision memo—not a screenshot of a smaller file.</p>
+        <div class="lab-banner"><strong>Lab contract</strong><span>BASELINE + 2 CANDIDATES · SAME TRACE · 3 QUALITY SLICES</span></div>
+        <h3>A. Run a local quantization microscope</h3>
+        <p>This script demonstrates symmetric per-tensor versus per-row INT8 and prints reconstruction error. Replace the random matrix with captured weights or activations only if your data policy allows it.</p>
+        <div class="codeblock"><div class="codebar"><span>quant_microscope.py</span><button class="copy" data-copy="codeA">COPY</button></div><pre id="codeA"><span class="kw">import</span> numpy <span class="kw">as</span> np
+
+rng = np.random.default_rng(7)
+x = rng.normal(0, 0.35, (64, 256)).astype(np.float32)
+x[:, 17] *= 12  <span class="cm"># activation-like outlier channel</span>
+
+def <span class="fn">sym_int8</span>(a, axis=None):
+    maxabs = np.max(np.abs(a), axis=axis, keepdims=True)
+    scale = np.maximum(maxabs / 127.0, 1e-12)
+    q = np.clip(np.rint(a / scale), -127, 127).astype(np.int8)
+    return q, scale, q.astype(np.float32) * scale
+
+_, s_tensor, x_tensor = sym_int8(x)
+_, s_row, x_row = sym_int8(x, axis=1)
+
+for name, recon, scales in [
+    (<span class="st">"per_tensor"</span>, x_tensor, s_tensor),
+    (<span class="st">"per_row"</span>, x_row, s_row),
+]:
+    mse = np.mean((x - recon) ** 2)
+    maxerr = np.max(np.abs(x - recon))
+    print(f<span class="st">"{name:>10}  mse={mse:.8f}  maxerr={maxerr:.6f}  scales={scales.size}"</span>)</pre></div>
+        <h3>B. Define the benchmark matrix</h3>
+        <div class="codeblock"><div class="codebar"><span>benchmark_plan.yaml</span><button class="copy" data-copy="codeB">COPY</button></div><pre id="codeB">baseline:
+  precision: bf16
+candidates:
+  - precision: fp8
+    target: prefill_and_decode
+  - precision: int4_awq
+    target: decode
+workload:
+  prompt_tokens: [128, 2048, 8192]
+  output_tokens: [128, 512]
+  concurrency: [1, 8, 32]
+metrics:
+  systems: [peak_gpu_gib, ttft_p50_p95, itl_p50_p95, tok_per_s]
+  quality: [perplexity_delta, task_score_delta, behavioral_slices]
+controls:
+  fixed: [model_revision, tokenizer, engine_version, gpu, sampling, request_order]</pre></div>
+        <h3>C. Inspect the serving path</h3>
+        <p>Use the engine’s current documentation to select supported model files and commands. Capture the engine version, quantization metadata, loaded kernel path, and any fallback warnings. Then profile one representative run.</p>
+        <div class="grid-2">
+          <article class="concept"><h3>Required evidence</h3><p>Engine log showing detected quantizer; profiler trace with low-precision GEMM; peak allocation; exact prompt-length histogram; benchmark command and commit.</p></article>
+          <article class="concept accent"><h3>Stop conditions</h3><p>Fallback to generic GEMM; conversion cost dominates; benchmark spills to CPU; tokenizer mismatch; quality evaluation silently truncates long prompts.</p></article>
+        </div>
+        <h3 style="margin-top:28px">D. Write the decision memo</h3>
+        <div class="codeblock"><div class="codebar"><span>MEMO.md</span><button class="copy" data-copy="codeC">COPY</button></div><pre id="codeC"># Compression decision
+
+## Workload and constraint
+What phase is bottlenecked? What must fit or improve?
+
+## Candidates
+Baseline, formats, group sizes, calibration data, engine + hardware.
+
+## Evidence
+Quality deltas by slice; TTFT/ITL percentiles; throughput; peak memory;
+profiler proof that the intended kernel ran.
+
+## Decision
+Choose one candidate, state the operating envelope, and name the rollback trigger.
+
+## Rejected alternatives
+Why each lost: quality, latency, memory, support, or operational complexity.
+
+## Risks
+Calibration drift, model update coupling, kernel portability, observability gaps.</pre></div>
+      </section>
+
+      <section class="section" id="checks" aria-labelledby="checks-title">
+        <div class="section-number">08 / KNOWLEDGE CHECKS</div>
+        <h2 class="section-title" id="checks-title">Can you defend the choice?</h2>
+        <p class="lead">Answer before opening the explanation. A production decision is complete only when you can explain the mechanism and the failure case.</p>
+        <div class="checkpoint"><button aria-expanded="false"><span>+</span>Why might W4A16 reduce decode latency but barely move prefill?</button><div class="answer">At low-batch decode, each token can require streaming much of the weight set, so cutting weight bytes attacks the bandwidth bottleneck. Prefill has higher arithmetic intensity and may be compute-bound; W4A16 still computes with high-precision activations and pays unpack/dequantization cost, so it may not exploit the same low-precision compute throughput as W8A8 or FP8.</div></div>
+        <div class="checkpoint"><button aria-expanded="false"><span>+</span>Why can a smaller group size improve quality and still hurt throughput?</button><div class="answer">Finer groups fit local distributions better, lowering quantization error. But they require more scales/zero points, more metadata loads, and more frequent scaling inside the kernel. They can also mismatch the kernel’s preferred tile layout.</div></div>
+        <div class="checkpoint"><button aria-expanded="false"><span>+</span>What does a perplexity pass fail to prove?</button><div class="answer">It does not prove instruction following, tool-use correctness, long-context retrieval, structured-output validity, calibration of confidence, multilingual behavior, safety behavior, or production latency. It is a sensitive early signal, not a release verdict.</div></div>
+        <div class="checkpoint"><button aria-expanded="false"><span>+</span>When does 50% sparsity produce zero speedup?</button><div class="answer">When the pattern is unsupported, the sparse metadata/indirection outweighs saved work, the implementation densifies before GEMM, the layer is not dominant, or another bottleneck—memory, attention, scheduler, CPU—limits end-to-end latency.</div></div>
+      </section>
+
+      <section class="section" id="sources" aria-labelledby="sources-title">
+        <div class="section-number">09 / PRIMARY READING</div>
+        <h2 class="section-title" id="sources-title">Read the mechanisms</h2>
+        <p class="lead">The claims above are framed as engineering principles. Use these references for the original methods and current framework vocabulary; verify your engine’s live support matrix before deployment.</p>
+        <div class="sources">
+          <a class="source" href="https://arxiv.org/abs/2306.00978?context=cs" target="_blank" rel="noopener noreferrer"><b>AWQ paper</b><span>Activation-aware scaling for low-bit weight-only quantization.</span></a>
+          <a class="source" href="https://arxiv.org/abs/2210.17323v2" target="_blank" rel="noopener noreferrer"><b>GPTQ paper</b><span>One-shot post-training quantization using approximate second-order information.</span></a>
+          <a class="source" href="https://docs.pytorch.org/docs/2.7/quantization.html" target="_blank" rel="noopener noreferrer"><b>PyTorch quantization overview</b><span>Core reduced-precision vocabulary and PTQ/QAT workflows.</span></a>
+          <a class="source" href="https://raw.githubusercontent.com/NVIDIA/TensorRT-LLM/release/0.5.0/docs/source/precision.md" target="_blank" rel="noopener noreferrer"><b>TensorRT-LLM precision reference</b><span>Concrete examples of FP8, W8A8, weight-only, AWQ, GPTQ, and KV-cache modes.</span></a>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div class="toast" role="status" aria-live="polite">Copied</div>
+
+  <script>
+    (function () {
+      var values = [-.82, -.41, -.19, -.08, .04, .11, .24, .37, .52, .79, 1.08, 2.7];
+      var bits = document.getElementById('bits');
+      var clip = document.getElementById('clip');
+      var bars = document.getElementById('bars');
+      function quantileAbs(arr, pct) {
+        var sorted = arr.map(Math.abs).sort(function(a,b){ return a-b; });
+        var idx = Math.max(0, Math.ceil((pct / 100) * sorted.length) - 1);
+        return sorted[idx];
+      }
+      function renderQuantizer() {
+        var b = Number(bits.value), p = Number(clip.value);
+        var qmax = Math.pow(2, b - 1) - 1;
+        var maxabs = quantileAbs(values, p);
+        var scale = maxabs / qmax;
+        var recon = values.map(function(v){ return Math.max(-qmax, Math.min(qmax, Math.round(v / scale))) * scale; });
+        var mse = values.reduce(function(sum, v, i){ return sum + Math.pow(v - recon[i], 2); }, 0) / values.length;
+        var clipped = values.filter(function(v){ return Math.abs(v) > maxabs + 1e-9; }).length / values.length * 100;
+        var visualMax = Math.max.apply(null, values.map(Math.abs));
+        bars.innerHTML = '';
+        values.forEach(function(v, i){
+          var pair = document.createElement('div'); pair.className = 'barpair';
+          var original = document.createElement('div'); original.className = 'bar original'; original.style.height = (12 + Math.abs(v) / visualMax * 150) + 'px'; original.title = 'Original: ' + v.toFixed(3);
+          var quantized = document.createElement('div'); quantized.className = 'bar quantized'; quantized.style.height = (12 + Math.abs(recon[i]) / visualMax * 150) + 'px'; quantized.title = 'Reconstructed: ' + recon[i].toFixed(3);
+          pair.appendChild(original); pair.appendChild(quantized); bars.appendChild(pair);
+        });
+        document.getElementById('bitsOut').textContent = b + '-bit';
+        document.getElementById('clipOut').textContent = p + '%';
+        document.getElementById('levelMetric').textContent = (qmax * 2 + 1).toString();
+        document.getElementById('mseMetric').textContent = mse.toFixed(3);
+        document.getElementById('satMetric').textContent = clipped.toFixed(0) + '%';
+      }
+      bits.addEventListener('input', renderQuantizer); clip.addEventListener('input', renderQuantizer); renderQuantizer();
+
+      var dense = document.getElementById('denseMatrix'), sparse = document.getElementById('sparseMatrix');
+      var vals = [3,-2,5,1,-4,7,2,-1, 6,2,-3,4,8,-2,1,5, -1,4,6,-5,2,7,-3,1, 5,-2,4,3,-6,1,8,-4];
+      vals.forEach(function(v, i){
+        var a = document.createElement('span'); a.className = 'cell'; a.textContent = v; dense.appendChild(a);
+        var position = i % 4; var keep = position === 0 || position === 2;
+        var c = document.createElement('span'); c.className = 'cell' + (keep ? '' : ' zero'); c.textContent = keep ? v : '0'; sparse.appendChild(c);
+      });
+
+      document.querySelectorAll('.checkpoint button').forEach(function(button){
+        button.addEventListener('click', function(){
+          var box = button.parentElement, open = box.classList.toggle('open');
+          button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+      });
+      var toast = document.querySelector('.toast'), toastTimer;
+      document.querySelectorAll('.copy').forEach(function(button){
+        button.addEventListener('click', function(){
+          var el = document.getElementById(button.getAttribute('data-copy'));
+          navigator.clipboard.writeText(el.innerText).then(function(){
+            toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 1400);
+          });
+        });
+      });
+      var links = Array.prototype.slice.call(document.querySelectorAll('.rail nav a'));
+      var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+      var observer = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting){
+            links.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id); });
+          }
+        });
+      }, { rootMargin: '-20% 0px -68% 0px' });
+      sections.forEach(function(section){ observer.observe(section); });
+    })();
+  </script>
+</body>
+</html>

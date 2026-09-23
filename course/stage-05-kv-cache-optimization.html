@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#f3f1eb" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#111418" media="(prefers-color-scheme: dark)" />
+  <link rel="icon" href="data:," />
+  <title>Stage 5: KV Cache Optimization</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap');
+
+    :root {
+      color-scheme: light dark;
+      --bg: #f3f1eb;
+      --paper: #fbfaf7;
+      --paper-2: #e9e6de;
+      --ink: #16201f;
+      --muted: #55615e;
+      --faint: #76807d;
+      --line: #c9cdc5;
+      --line-strong: #8f9994;
+      --accent: #b83c20;
+      --accent-2: #0b7363;
+      --accent-soft: #f2ddd5;
+      --green-soft: #d8e8e2;
+      --code: #18211f;
+      --code-ink: #eff5f0;
+      --shadow: 0 18px 48px rgba(27, 36, 33, .09);
+      --radius: 14px;
+      --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+      --sans: "Source Sans 3", system-ui, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111418;
+        --paper: #191e22;
+        --paper-2: #22292d;
+        --ink: #edf3ef;
+        --muted: #b3beb9;
+        --faint: #8f9a96;
+        --line: #34403d;
+        --line-strong: #5a6863;
+        --accent: #ff7c5d;
+        --accent-2: #59c5ae;
+        --accent-soft: #472820;
+        --green-soft: #173a32;
+        --code: #0c1012;
+        --code-ink: #e9f3ee;
+        --shadow: 0 20px 58px rgba(0, 0, 0, .28);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 17px;
+      line-height: 1.58;
+      overflow-wrap: anywhere;
+    }
+    button, input, select { font: inherit; }
+    a { color: inherit; }
+    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: clamp(2.65rem, 6vw, 5.8rem); line-height: .92; letter-spacing: -.055em; max-width: 780px; margin-bottom: 28px; }
+    h2 { font-size: clamp(1.85rem, 3.2vw, 3rem); line-height: 1.05; letter-spacing: -.03em; margin-bottom: 18px; }
+    h3 { font-size: 1.18rem; line-height: 1.25; letter-spacing: -.012em; margin-bottom: 8px; }
+    code, .mono { font-family: var(--mono); }
+    code { font-size: .84em; background: var(--paper-2); padding: .12em .34em; border-radius: 4px; }
+    sup { font-size: .65em; }
+
+    .shell { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 230px minmax(0, 1fr); }
+    .rail { position: sticky; top: 0; height: 100vh; border-right: 1px solid var(--line); padding: 28px 24px 24px; display: flex; flex-direction: column; gap: 26px; }
+    .stage-stamp { font-family: var(--mono); font-size: .78rem; font-weight: 600; color: var(--accent); letter-spacing: .08em; }
+    .rail nav { display: grid; gap: 4px; }
+    .rail a { text-decoration: none; color: var(--muted); font-size: .92rem; padding: 7px 10px; border-radius: 7px; transition: background .16s ease, color .16s ease; }
+    .rail a:hover, .rail a.active { background: var(--paper-2); color: var(--ink); }
+    .rail .progress { margin-top: auto; }
+    .progress-label { display: flex; justify-content: space-between; color: var(--faint); font: 500 .72rem var(--mono); margin-bottom: 8px; }
+    .progress-track { height: 4px; background: var(--paper-2); overflow: hidden; }
+    .progress-fill { height: 100%; width: 41.67%; background: var(--accent); }
+
+    main { min-width: 0; }
+    section { padding: 84px clamp(26px, 6vw, 92px); border-bottom: 1px solid var(--line); scroll-margin-top: 18px; }
+    .hero { min-height: 90vh; display: grid; align-content: center; background: var(--paper); position: relative; overflow: hidden; }
+    .hero::after { content: "K → V"; position: absolute; right: -18px; bottom: -80px; font: 600 clamp(8rem, 22vw, 21rem)/1 var(--mono); letter-spacing: -.12em; color: var(--paper-2); z-index: 0; pointer-events: none; }
+    .hero > * { position: relative; z-index: 1; }
+    .eyebrow { color: var(--accent); font: 600 .78rem var(--mono); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 20px; }
+    .lede { max-width: 720px; font-size: clamp(1.22rem, 2.1vw, 1.55rem); line-height: 1.45; color: var(--muted); margin-bottom: 34px; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; }
+    .hero-meta span { border: 1px solid var(--line-strong); padding: 6px 10px; font: 500 .76rem var(--mono); background: var(--paper); }
+    .objectives { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-top: 56px; max-width: 940px; }
+    .objective { background: var(--paper); padding: 20px; }
+    .objective b { font: 600 .73rem var(--mono); color: var(--accent); display: block; margin-bottom: 7px; }
+    .objective span { color: var(--muted); font-size: .94rem; line-height: 1.4; }
+
+    .section-head { max-width: 760px; margin-bottom: 36px; }
+    .section-head p { color: var(--muted); max-width: 680px; }
+    .callout { border-top: 3px solid var(--accent); background: var(--paper); padding: 22px 24px; box-shadow: var(--shadow); }
+    .callout strong { color: var(--accent); }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+
+    .formula-card { background: var(--code); color: var(--code-ink); padding: clamp(24px, 5vw, 44px); box-shadow: var(--shadow); }
+    .formula { font: 500 clamp(1.05rem, 2.4vw, 1.58rem)/1.65 var(--mono); color: var(--code-ink); white-space: normal; }
+    .formula .a { color: #ff9278; }
+    .formula .b { color: #75d2bc; }
+    .formula-notes { border-top: 1px solid #43504c; margin-top: 24px; padding-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .formula-notes small { display: block; color: #aebdb7; line-height: 1.45; }
+    .formula-notes b { color: #f2f7f4; font: 600 .78rem var(--mono); display: block; margin-bottom: 5px; }
+    .anatomy-list { display: grid; gap: 12px; }
+    .anatomy-item { display: grid; grid-template-columns: 42px 1fr; gap: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .anatomy-item:last-child { border: 0; }
+    .anatomy-item .n { font: 600 .75rem var(--mono); color: var(--accent); padding-top: 3px; }
+    .anatomy-item p { margin: 3px 0 0; color: var(--muted); font-size: .94rem; }
+
+    .calculator { background: var(--paper); border: 1px solid var(--line-strong); display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr); box-shadow: var(--shadow); }
+    .calc-inputs { padding: 28px; border-right: 1px solid var(--line); }
+    .calc-output { padding: 28px; background: var(--code); color: var(--code-ink); }
+    .preset-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+    .preset { border: 1px solid var(--line-strong); background: transparent; color: var(--ink); padding: 7px 10px; cursor: pointer; font: 500 .73rem var(--mono); }
+    .preset:hover, .preset.selected { background: var(--ink); color: var(--bg); }
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    label { font: 500 .73rem var(--mono); color: var(--muted); display: grid; gap: 6px; }
+    input, select { width: 100%; border: 1px solid var(--line-strong); background: var(--bg); color: var(--ink); padding: 10px 11px; border-radius: 0; }
+    .output-kicker { font: 500 .71rem var(--mono); color: #9eb0aa; text-transform: uppercase; letter-spacing: .08em; }
+    .big-number { font: 600 clamp(2.4rem, 5vw, 4.6rem)/1 var(--mono); letter-spacing: -.06em; margin: 8px 0 4px; }
+    .big-label { color: #b9c5c1; margin-bottom: 28px; }
+    .metric-list { border-top: 1px solid #43504c; }
+    .metric { display: flex; justify-content: space-between; gap: 16px; padding: 13px 0; border-bottom: 1px solid #34413d; }
+    .metric span { color: #aebdb7; }
+    .metric b { font-family: var(--mono); font-weight: 500; text-align: right; }
+    .compression { margin-top: 22px; }
+    .bar { height: 12px; background: #34413d; margin-top: 8px; }
+    .bar > i { display: block; height: 100%; background: #ff7c5d; width: 100%; transition: width .24s ease; }
+    .calc-note { color: #9eb0aa; font-size: .82rem; line-height: 1.45; margin: 14px 0 0; }
+
+    .lever { border-top: 1px solid var(--line-strong); padding: 34px 0 46px; }
+    .lever:last-child { padding-bottom: 0; }
+    .lever-title { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 18px; align-items: start; margin-bottom: 24px; }
+    .lever-num { font: 600 1rem var(--mono); color: var(--accent); border: 1px solid var(--accent); width: 44px; height: 44px; display: grid; place-items: center; }
+    .lever-title p { color: var(--muted); margin: 5px 0 0; max-width: 700px; }
+    .tag { font: 500 .68rem var(--mono); padding: 5px 8px; background: var(--green-soft); color: var(--accent-2); }
+    .mechanism { background: var(--paper); border: 1px solid var(--line); padding: 22px; }
+    .mechanism .label { color: var(--accent); font: 600 .7rem var(--mono); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+    .mechanism p:last-child { margin-bottom: 0; }
+    .mechanism ul { margin-bottom: 0; padding-left: 1.2rem; }
+    .mechanism li { margin: 6px 0; }
+
+    .blocks { display: grid; gap: 9px; }
+    .block-row { display: grid; grid-template-columns: 80px repeat(5, minmax(30px, 1fr)); gap: 6px; align-items: center; }
+    .block-row .name { font: 500 .69rem var(--mono); color: var(--muted); }
+    .blk { min-height: 38px; display: grid; place-items: center; font: 600 .69rem var(--mono); border: 1px solid var(--line-strong); background: var(--paper-2); }
+    .blk.shared { background: var(--green-soft); border-color: var(--accent-2); color: var(--accent-2); }
+    .blk.new { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+    .blk.empty { background: transparent; border-style: dashed; color: var(--faint); }
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; color: var(--muted); font-size: .8rem; }
+    .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; background: var(--green-soft); border: 1px solid var(--accent-2); }
+    .legend i.new { background: var(--accent-soft); border-color: var(--accent); }
+
+    .timeline { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin: 10px 0 18px; }
+    .slot { min-height: 54px; display: grid; place-items: center; text-align: center; font: 600 .65rem/1.25 var(--mono); padding: 5px; background: var(--paper-2); border-bottom: 3px solid var(--line-strong); }
+    .slot.decode { background: var(--green-soft); border-color: var(--accent-2); color: var(--accent-2); }
+    .slot.prefill { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+    .dtype-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    .dtype-table th, .dtype-table td { text-align: left; padding: 11px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .dtype-table th { font: 600 .69rem var(--mono); color: var(--muted); }
+    .dtype-table td:first-child { font-family: var(--mono); font-weight: 600; }
+
+    .tier-stack { display: grid; gap: 9px; }
+    .tier { display: grid; grid-template-columns: 120px 1fr auto; gap: 14px; align-items: center; padding: 14px; border: 1px solid var(--line); background: var(--paper); }
+    .tier strong { font-family: var(--mono); }
+    .tier span { color: var(--muted); font-size: .9rem; }
+    .tier em { font-style: normal; font: 600 .68rem var(--mono); color: var(--accent); }
+
+    .decision { background: var(--paper); border: 1px solid var(--line); padding: 22px; }
+    .decision .signal { font: 600 .68rem var(--mono); color: var(--accent); margin-bottom: 10px; }
+    .decision ul { padding-left: 1.1rem; margin: 10px 0 0; color: var(--muted); }
+
+    .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; align-items: stretch; }
+    .flow-step { padding: 16px 12px; background: var(--paper); border: 1px solid var(--line); position: relative; }
+    .flow-step:not(:last-child)::after { content: "→"; position: absolute; right: -15px; top: 50%; transform: translateY(-50%); z-index: 2; color: var(--accent); font: 600 1.1rem var(--mono); }
+    .flow-step b { display: block; font: 600 .73rem var(--mono); margin-bottom: 6px; }
+    .flow-step span { color: var(--muted); font-size: .84rem; line-height: 1.35; display: block; }
+
+    .lab-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 22px; align-items: start; }
+    .code-wrap { background: var(--code); color: var(--code-ink); box-shadow: var(--shadow); }
+    .code-head { padding: 12px 16px; border-bottom: 1px solid #35413d; display: flex; align-items: center; justify-content: space-between; gap: 12px; font: 500 .72rem var(--mono); color: #aebdb7; }
+    .copy-btn { border: 1px solid #65736d; background: transparent; color: #edf3ef; padding: 5px 9px; cursor: pointer; font: 500 .68rem var(--mono); }
+    .copy-btn:hover { background: #2a3531; }
+    pre { margin: 0; padding: 20px; font: 400 .79rem/1.65 var(--mono); white-space: pre-wrap; word-break: break-word; tab-size: 2; }
+    .kw { color: #ff9278; } .fn { color: #75d2bc; } .cm { color: #899892; } .st { color: #e9c678; }
+    .steps { counter-reset: lab; display: grid; gap: 14px; }
+    .lab-step { counter-increment: lab; display: grid; grid-template-columns: 34px 1fr; gap: 12px; }
+    .lab-step::before { content: counter(lab); width: 30px; height: 30px; border: 1px solid var(--accent); color: var(--accent); display: grid; place-items: center; font: 600 .7rem var(--mono); }
+    .lab-step p { margin: 3px 0 0; color: var(--muted); font-size: .91rem; }
+
+    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+    .watch { background: var(--paper); padding: 18px; min-height: 150px; }
+    .watch .unit { font: 600 .66rem var(--mono); color: var(--accent); margin-bottom: 16px; }
+    .watch b { font-size: 1rem; display: block; }
+    .watch p { color: var(--muted); font-size: .85rem; line-height: 1.38; margin: 7px 0 0; }
+    .gate { display: grid; grid-template-columns: 150px 1fr; gap: 18px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+    .gate:last-child { border: 0; }
+    .gate b { font: 600 .76rem var(--mono); color: var(--accent); }
+    .gate p { margin: 0; color: var(--muted); }
+
+    .quiz { display: grid; gap: 10px; }
+    .quiz-item { border: 1px solid var(--line); background: var(--paper); }
+    .quiz-q { width: 100%; border: 0; background: transparent; color: var(--ink); padding: 18px 20px; display: flex; justify-content: space-between; gap: 16px; text-align: left; cursor: pointer; font-weight: 600; }
+    .quiz-q span:last-child { color: var(--accent); font-family: var(--mono); }
+    .quiz-a { display: none; padding: 0 20px 18px; color: var(--muted); }
+    .quiz-item.open .quiz-a { display: block; }
+    .quiz-item.open .quiz-q span:last-child { transform: rotate(45deg); }
+
+    .refs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .ref { border-top: 3px solid var(--line-strong); background: var(--paper); padding: 18px; text-decoration: none; transition: border-color .15s ease, background .15s ease; }
+    .ref:hover { border-color: var(--accent); background: var(--paper-2); }
+    .ref b { display: block; margin-bottom: 6px; }
+    .ref span { color: var(--muted); font-size: .86rem; line-height: 1.4; display: block; }
+    footer { padding: 30px clamp(26px, 6vw, 92px) 70px; color: var(--faint); font: 500 .73rem var(--mono); }
+
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+      .rail { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 14px 20px; display: block; }
+      .rail .stage-stamp, .rail .progress { display: none; }
+      .rail nav { display: flex; flex-wrap: wrap; gap: 5px; }
+      .rail a { font-size: .8rem; padding: 5px 7px; }
+      .hero { min-height: auto; padding-top: 76px; }
+      .objectives { grid-template-columns: 1fr; }
+      .calculator { grid-template-columns: 1fr; }
+      .calc-inputs { border-right: 0; border-bottom: 1px solid var(--line); }
+      .metric-grid { grid-template-columns: repeat(2, 1fr); }
+      .refs { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      body { font-size: 16px; }
+      section { padding: 58px 20px; }
+      h1 { font-size: clamp(3rem, 15vw, 4.3rem); }
+      .hero::after { bottom: -38px; }
+      .grid-2, .grid-3, .lab-layout { grid-template-columns: 1fr; }
+      .formula-notes { grid-template-columns: 1fr; }
+      .field-grid { grid-template-columns: 1fr 1fr; }
+      .lever-title { grid-template-columns: 48px 1fr; }
+      .lever-title .tag { grid-column: 2; justify-self: start; }
+      .block-row { grid-template-columns: 62px repeat(5, minmax(0, 1fr)); gap: 3px; }
+      .blk { min-height: 34px; font-size: .58rem; }
+      .timeline { grid-template-columns: repeat(4, 1fr); }
+      .tier { grid-template-columns: 1fr; gap: 3px; }
+      .flow { grid-template-columns: 1fr; }
+      .flow-step:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -19px; transform: translateX(50%); }
+      .metric-grid { grid-template-columns: 1fr; }
+      .gate { grid-template-columns: 1fr; gap: 4px; }
+      .dtype-table thead { display: none; }
+      .dtype-table, .dtype-table tbody, .dtype-table tr, .dtype-table td { display: block; width: 100%; }
+      .dtype-table tr { padding: 12px 0; border-bottom: 1px solid var(--line); }
+      .dtype-table td { border: 0; padding: 4px 0; }
+      .dtype-table td::before { content: attr(data-label) ": "; font: 600 .66rem var(--mono); color: var(--faint); }
+    }
+    @media (max-width: 440px) {
+      .field-grid { grid-template-columns: 1fr; }
+      .hero-meta span { width: 100%; }
+      .calc-inputs, .calc-output { padding: 21px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail" aria-label="Course navigation">
+    <div class="stage-stamp">INFERENCE SYSTEMS / 05</div>
+    <nav>
+      <a href="#mental-model">Memory math</a>
+      <a href="#calculator">Capacity lab</a>
+      <a href="#levers">Five levers</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#lab">Hands-on lab</a>
+      <a href="#production">Production gates</a>
+      <a href="#check">Knowledge check</a>
+    </nav>
+    <div class="progress">
+      <div class="progress-label"><span>COURSE STAGE</span><span>05</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
+    </div>
+  </aside>
+
+  <main>
+    <section class="hero">
+      <div class="eyebrow">Stage 5 · Memory is the scheduler</div>
+      <h1>KV Cache Optimization</h1>
+      <p class="lede">The cache turns autoregressive decoding from “recompute the whole past” into “read the past once.” It also becomes the dominant dynamic memory consumer. This stage is about controlling that trade: reuse what is identical, schedule what is long, compress what is cold, and spill only when bandwidth permits.</p>
+      <div class="hero-meta">
+        <span>90–120 MIN</span><span>5 CORE MECHANISMS</span><span>1 CAPACITY CALCULATOR</span><span>1 IMPLEMENTATION LAB</span>
+      </div>
+      <div class="objectives">
+        <div class="objective"><b>01 / MODEL</b><span>Derive KV bytes per token from layer count, KV heads, head dimension, and dtype.</span></div>
+        <div class="objective"><b>02 / DESIGN</b><span>Choose between prefix reuse, quantization, paging, and offload for a workload.</span></div>
+        <div class="objective"><b>03 / DEFEND</b><span>Explain invalidation, isolation, bandwidth, and quality failure modes at a whiteboard.</span></div>
+      </div>
+    </section>
+
+    <section id="mental-model">
+      <div class="section-head">
+        <div class="eyebrow">01 · Mental model</div>
+        <h2>The cache is a time–memory exchange.</h2>
+        <p>At layer <em>ℓ</em>, every processed token contributes one key vector and one value vector. During decode, the new query attends over those stored vectors instead of regenerating them. Compute saved grows with history length; memory consumed grows linearly with it.</p>
+      </div>
+      <div class="grid-2">
+        <div class="formula-card">
+          <div class="formula"><span class="a">bytes / token</span><br>= 2 × L × H<sub>kv</sub> × d<sub>head</sub> × <span class="b">bytes(dtype)</span></div>
+          <div class="formula-notes">
+            <small><b>2 TENSORS</b>One K and one V per layer.</small>
+            <small><b>GQA MATTERS</b>Use KV heads, not query heads.</small>
+            <small><b>LINEAR GROWTH</b>Multiply by live tokens and sequences.</small>
+          </div>
+        </div>
+        <div class="anatomy-list">
+          <div class="anatomy-item"><div class="n">A</div><div><h3>Shape before layout</h3><p>Conceptually: <code>[layers, 2, kv_heads, tokens, head_dim]</code>. Engines reorder dimensions and block tokens for kernel-friendly access.</p></div></div>
+          <div class="anatomy-item"><div class="n">B</div><div><h3>Allocation before arithmetic</h3><p>Logical capacity is not physical capacity. Contiguous buffers add reservation and fragmentation; block managers bound waste to the final partial block.</p></div></div>
+          <div class="anatomy-item"><div class="n">C</div><div><h3>Bandwidth before capacity</h3><p>A cache that fits may still be slow. Decode repeatedly streams K/V for the growing context, so dtype and memory tier affect latency as well as concurrency.</p></div></div>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:26px"><strong>Whiteboard test:</strong> if a model uses 32 layers, 8 KV heads, head dimension 128, and BF16, each token consumes <code>2 × 32 × 8 × 128 × 2 = 131,072 bytes</code> of KV cache — exactly 128 KiB before allocator metadata.</div>
+    </section>
+
+    <section id="calculator">
+      <div class="section-head">
+        <div class="eyebrow">02 · Capacity lab</div>
+        <h2>Budget the live set.</h2>
+        <p>Change the architecture, context, concurrency, and cache dtype. This calculates raw tensor bytes; reserve additional HBM for model weights, activations, CUDA graphs, temporary workspaces, and allocator headroom.</p>
+      </div>
+      <div class="calculator">
+        <div class="calc-inputs">
+          <div class="preset-row" aria-label="Architecture presets">
+            <button class="preset selected" data-preset="gqa8">GQA 8B</button>
+            <button class="preset" data-preset="gqa70">GQA 70B</button>
+            <button class="preset" data-preset="mha7">MHA 7B</button>
+          </div>
+          <div class="field-grid">
+            <label>LAYERS<input id="layers" type="number" min="1" max="256" value="32" /></label>
+            <label>KV HEADS<input id="kvheads" type="number" min="1" max="256" value="8" /></label>
+            <label>HEAD DIM<input id="headdim" type="number" min="16" max="512" step="16" value="128" /></label>
+            <label>CONTEXT / SEQ<input id="tokens" type="number" min="1" max="10000000" step="256" value="8192" /></label>
+            <label>LIVE SEQUENCES<input id="seqs" type="number" min="1" max="100000" value="32" /></label>
+            <label>KV DTYPE<select id="dtype"><option value="2">BF16 / FP16 · 2 B</option><option value="1">FP8 / INT8 · 1 B</option><option value="0.5">INT4 · 0.5 B</option></select></label>
+          </div>
+        </div>
+        <div class="calc-output" aria-live="polite">
+          <div class="output-kicker">Raw KV allocation</div>
+          <div class="big-number" id="total">32.0 GiB</div>
+          <div class="big-label" id="summary">32 sequences × 8,192 tokens</div>
+          <div class="metric-list">
+            <div class="metric"><span>Per token</span><b id="per-token">128 KiB</b></div>
+            <div class="metric"><span>Per sequence</span><b id="per-seq">1.00 GiB</b></div>
+            <div class="metric"><span>1K-token block</span><b id="per-k">125 MiB</b></div>
+            <div class="metric"><span>vs. BF16</span><b id="reduction">baseline</b></div>
+          </div>
+          <div class="compression"><span class="output-kicker">Relative footprint</span><div class="bar"><i id="bar-fill"></i></div></div>
+          <p class="calc-note">This is capacity, not a performance promise. Lower precision adds dequantization work and can shift the kernel bottleneck.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="levers">
+      <div class="section-head">
+        <div class="eyebrow">03 · The five levers</div>
+        <h2>Optimize reuse first. Compress second. Spill last.</h2>
+        <p>These mechanisms solve different problems. Combining them without understanding their boundaries can save memory while making latency or correctness worse.</p>
+      </div>
+
+      <article class="lever">
+        <div class="lever-title"><div class="lever-num">01</div><div><h2>Prefix caching</h2><p>Reuse K/V blocks when requests begin with the same exact token prefix. It removes duplicate prefill compute and duplicate cache storage for shared blocks.</p></div><div class="tag">COMPUTE + MEMORY</div></div>
+        <div class="grid-2">
+          <div class="mechanism">
+            <div class="label">Block identity</div>
+            <div class="blocks" aria-label="Prefix cache sharing diagram">
+              <div class="block-row"><span class="name">request A</span><span class="blk shared">h₀</span><span class="blk shared">h₁</span><span class="blk shared">h₂</span><span class="blk new">A₃</span><span class="blk new">A₄</span></div>
+              <div class="block-row"><span class="name">request B</span><span class="blk shared">h₀</span><span class="blk shared">h₁</span><span class="blk shared">h₂</span><span class="blk new">B₃</span><span class="blk empty">—</span></div>
+            </div>
+            <div class="legend"><span><i></i>shared, reference-counted</span><span><i class="new"></i>private after divergence</span></div>
+            <p style="margin-top:16px">A common design hashes <code>parent_hash + block_tokens + cache_identity</code>. The parent hash makes block identity position- and history-sensitive.</p>
+          </div>
+          <div class="mechanism">
+            <div class="label">Correctness boundary</div>
+            <ul>
+              <li><strong>Exact tokens:</strong> semantically equivalent text with different tokenization is a miss.</li>
+              <li><strong>Exact model state:</strong> model revision, adapter/LoRA, RoPE configuration, multimodal inputs, and relevant sampling-side transforms belong in the identity.</li>
+              <li><strong>Tenant isolation:</strong> salt or namespace hashes where cache existence could leak sensitive prompt reuse.</li>
+              <li><strong>Whole blocks:</strong> only a complete block is typically reusable; the tail stays request-owned.</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <article class="lever">
+        <div class="lever-title"><div class="lever-num">02</div><div><h2>Chunked prefill</h2><p>Split long prompt work across scheduling iterations so a single compute-heavy prefill cannot monopolize the engine or starve decode.</p></div><div class="tag">SCHEDULING</div></div>
+        <div class="grid-2">
+          <div class="mechanism">
+            <div class="label">One mixed iteration</div>
+            <div class="timeline" aria-label="Chunked prefill scheduling timeline"><span class="slot decode">D₁<br>1 tok</span><span class="slot decode">D₂<br>1 tok</span><span class="slot decode">D₃<br>1 tok</span><span class="slot prefill">P₁<br>chunk</span><span class="slot prefill">P₁<br>chunk</span><span class="slot prefill">P₂<br>chunk</span><span class="slot prefill">P₂<br>chunk</span><span class="slot prefill">P₂<br>chunk</span></div>
+            <p>Decode requests consume little compute per sequence but are latency-sensitive. Remaining token budget is filled with prefill chunks, mixing memory-bound decode with compute-bound prefill.</p>
+          </div>
+          <div class="mechanism">
+            <div class="label">Tune the token budget</div>
+            <p><strong>Smaller chunks</strong> improve fairness and inter-token latency, but add scheduling and kernel-launch overhead. <strong>Larger chunks</strong> improve prefill efficiency and first-token latency for the long request, but create burstier interference.</p>
+            <p>Measure p95/p99 <code>TTFT</code> and <code>ITL</code> separately. An average can hide a scheduler that is excellent for throughput and poor for interactive tails.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="lever">
+        <div class="lever-title"><div class="lever-num">03</div><div><h2>KV quantization</h2><p>Store cached keys and values in fewer bits, then dequantize or consume them directly in the attention path. Capacity scales nearly linearly with bit width; quality and kernel cost do not.</p></div><div class="tag">CAPACITY + BANDWIDTH</div></div>
+        <div class="grid-2">
+          <div class="mechanism">
+            <div class="label">Precision ladder</div>
+            <table class="dtype-table">
+              <thead><tr><th>Format</th><th>Raw bytes</th><th>Use when</th><th>Main risk</th></tr></thead>
+              <tbody>
+                <tr><td data-label="Format">BF16/FP16</td><td data-label="Raw bytes">2 / value</td><td data-label="Use when">quality baseline; kernels mature</td><td data-label="Main risk">HBM and bandwidth pressure</td></tr>
+                <tr><td data-label="Format">FP8/INT8</td><td data-label="Raw bytes">1 / value</td><td data-label="Use when">production compression with supported kernels</td><td data-label="Main risk">scale granularity and outliers</td></tr>
+                <tr><td data-label="Format">INT4</td><td data-label="Raw bytes">0.5 / value</td><td data-label="Use when">capacity dominates and quality is validated</td><td data-label="Main risk">packing overhead; error accumulation</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="mechanism">
+            <div class="label">Implementation questions</div>
+            <ul>
+              <li>Per-tensor, per-head, per-channel, or per-token scales?</li>
+              <li>Static calibration or dynamic scale computation?</li>
+              <li>Are K and V quantized symmetrically? Their outlier structure can differ.</li>
+              <li>Does the attention kernel read the compressed layout directly, or materialize a wider temporary?</li>
+              <li>Did long-context perplexity, retrieval, and generation regressions stay inside the product’s tolerance?</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <article class="lever">
+        <div class="lever-title"><div class="lever-num">04</div><div><h2>Cache offloading</h2><p>Extend capacity by moving colder KV blocks to host memory—or, in specialized designs, local storage—and restoring them before use.</p></div><div class="tag">CAPACITY TIERING</div></div>
+        <div class="grid-2">
+          <div class="mechanism">
+            <div class="label">Tiered pool</div>
+            <div class="tier-stack">
+              <div class="tier"><strong>GPU HBM</strong><span>active decode blocks</span><em>FAST / SCARCE</em></div>
+              <div class="tier"><strong>CPU pinned</strong><span>paused or lower-priority sessions</span><em>SLOWER / LARGER</em></div>
+              <div class="tier"><strong>NVMe</strong><span>specialized long-lived cold cache</span><em>LAST RESORT</em></div>
+            </div>
+          </div>
+          <div class="mechanism">
+            <div class="label">The bandwidth inequality</div>
+            <p><code>restore_bytes / link_bandwidth ≤ latency_slack</code></p>
+            <p>If the cache restore cannot finish inside the scheduler’s slack, offload converts an OOM into a latency spike. Use pinned host buffers, asynchronous copies, overlap, and a policy that predicts reuse—not only recency.</p>
+            <p><strong>Compare against recompute:</strong> for short prefixes or congested interconnects, recomputing KV may be cheaper than transferring it back.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="lever">
+        <div class="lever-title"><div class="lever-num">05</div><div><h2>Multi-turn reuse</h2><p>A conversation is an append-only sequence until it is not. Preserve the validated prefix and prefill only newly appended tokens.</p></div><div class="tag">SESSION REUSE</div></div>
+        <div class="grid-2">
+          <div class="mechanism">
+            <div class="label">Fast path</div>
+            <p><code>cached_history ⧺ new_user_turn ⧺ assistant_prefix</code></p>
+            <p>The cache remains valid when the rendered token sequence is identical and new tokens only append. A block table can reference old pages and allocate new pages for the suffix.</p>
+          </div>
+          <div class="mechanism">
+            <div class="label">Invalidate when</div>
+            <ul>
+              <li>The system prompt, tool schema, model revision, or adapter changes.</li>
+              <li>History is edited, summarized, re-templated, or truncated before the cached tail.</li>
+              <li>Position encoding or attention-window semantics change.</li>
+              <li>A session crosses an isolation boundary.</li>
+            </ul>
+            <p>Keep a token-level longest-common-prefix fallback. “Same conversation ID” is not sufficient cache identity.</p>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section id="architecture">
+      <div class="section-head">
+        <div class="eyebrow">04 · Architecture</div>
+        <h2>A defensible cache manager.</h2>
+        <p>Separate logical identity from physical placement. That makes reuse, paging, eviction, offload, and observability composable instead of entangled.</p>
+      </div>
+      <div class="flow" aria-label="KV cache request flow">
+        <div class="flow-step"><b>1 · TOKENIZE</b><span>canonical template and exact token IDs</span></div>
+        <div class="flow-step"><b>2 · HASH</b><span>parent hash + block + model identity</span></div>
+        <div class="flow-step"><b>3 · LOOK UP</b><span>longest valid run of resident blocks</span></div>
+        <div class="flow-step"><b>4 · SCHEDULE</b><span>decode first; chunk suffix prefill</span></div>
+        <div class="flow-step"><b>5 · PLACE</b><span>allocate, reference, evict, or restore</span></div>
+      </div>
+      <div class="grid-3" style="margin-top:24px">
+        <div class="decision"><div class="signal">HIGH SHARED-PREFIX RATE</div><h3>Prioritize prefix caching</h3><ul><li>Stable system prompts</li><li>Few prompt templates</li><li>Strong tenant boundaries</li></ul></div>
+        <div class="decision"><div class="signal">LONG PROMPTS + CHAT</div><h3>Prioritize chunking</h3><ul><li>TTFT and ITL have separate SLOs</li><li>Mixed prefill/decode queue</li><li>Tail fairness matters</li></ul></div>
+        <div class="decision"><div class="signal">HBM-LIMITED CONCURRENCY</div><h3>Quantize, then tier</h3><ul><li>Measure quality first</li><li>Verify kernel support</li><li>Offload only with bandwidth budget</li></ul></div>
+      </div>
+      <div class="callout" style="margin-top:26px"><strong>Eviction policy is a workload hypothesis.</strong> LRU assumes recent prefixes return. Cost-aware eviction also considers block size, recompute cost, restore cost, prefix fan-out, and tenant quota. Instrument the hypothesis before making it clever.</div>
+    </section>
+
+    <section id="lab">
+      <div class="section-head">
+        <div class="eyebrow">05 · Hands-on lab</div>
+        <h2>Build a block-hash cache simulator.</h2>
+        <p>The lab is intentionally small: implement the identity and lifecycle rules without a GPU, then use traces to reason about what a production engine must do atomically.</p>
+      </div>
+      <div class="lab-layout">
+        <div class="code-wrap">
+          <div class="code-head"><span>kv_cache_sim.py · skeleton</span><button class="copy-btn" data-copy="code-sample">COPY</button></div>
+          <pre id="code-sample"><span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+<span class="kw">from</span> hashlib <span class="kw">import</span> sha256
+
+@dataclass(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> <span class="fn">Identity</span>:
+  model_rev: str
+  adapter_id: str | <span class="kw">None</span>
+  tenant_salt: bytes
+
+<span class="kw">def</span> <span class="fn">block_hash</span>(parent: bytes, tokens: tuple[int, ...], ident: Identity):
+  h = sha256()
+  <span class="kw">for</span> part <span class="kw">in</span> (parent, repr(tokens).encode(),
+               ident.model_rev.encode(),
+               repr(ident.adapter_id).encode(), ident.tenant_salt):
+    h.update(len(part).to_bytes(4, <span class="st">"big"</span>))
+    h.update(part)
+  <span class="kw">return</span> h.digest()
+
+<span class="cm"># TODO: map hash → Block(id, refcount, state, last_access)</span>
+<span class="cm"># TODO: acquire the longest full-block prefix</span>
+<span class="cm"># TODO: copy-on-write the first divergent partial block</span>
+<span class="cm"># TODO: evict only blocks whose refcount == 0</span></pre>
+        </div>
+        <div>
+          <div class="steps">
+            <div class="lab-step"><div><h3>Implement lifecycle</h3><p>Add <code>acquire</code>, <code>release</code>, and <code>evict</code>. Assert that referenced blocks are never reclaimed.</p></div></div>
+            <div class="lab-step"><div><h3>Generate a trace</h3><p>Create 1,000 requests from five shared prefixes plus unique suffixes. Run one tenant, then four isolated tenants.</p></div></div>
+            <div class="lab-step"><div><h3>Measure</h3><p>Report hit tokens/request, hit requests, bytes avoided, hash time, evictions, and false sharing across identities.</p></div></div>
+            <div class="lab-step"><div><h3>Break it</h3><p>Change one token, adapter ID, and tenant salt independently. Each must invalidate that block and all descendants.</p></div></div>
+            <div class="lab-step"><div><h3>Defend it</h3><p>Explain why parent hashing is required, why the tail block is special, and how races affect reference counts.</p></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:24px">
+        <div class="mechanism"><div class="label">Stretch A · Scheduler</div><p>Add a fixed token budget per iteration. Schedule all decode tokens first, then fit prefill chunks. Plotting is optional; the required output is a trace showing queue wait, TTFT proxy, and ITL proxy per request.</p></div>
+        <div class="mechanism"><div class="label">Stretch B · Cost-aware eviction</div><p>Score an idle block using expected reuse benefit minus restore/recompute cost. Compare against LRU on the same deterministic trace. State which workload assumption produced the difference.</p></div>
+      </div>
+    </section>
+
+    <section id="production">
+      <div class="section-head">
+        <div class="eyebrow">06 · Production gates</div>
+        <h2>Optimize against an SLO, not a demo.</h2>
+        <p>Cache hit rate alone can rise while user latency worsens. Track the mechanism, the resource it consumes, and the outcome it is meant to improve.</p>
+      </div>
+      <div class="metric-grid">
+        <div class="watch"><div class="unit">REUSE</div><b>Prefix hit tokens</b><p>Count tokens skipped, not only requests with any hit. A one-block hit and a 16K-token hit are not equivalent.</p></div>
+        <div class="watch"><div class="unit">LATENCY</div><b>TTFT + ITL tails</b><p>Split by prompt/output length and cache-hit status. Report p50, p95, and p99.</p></div>
+        <div class="watch"><div class="unit">MEMORY</div><b>HBM occupancy</b><p>Useful bytes, reserved blocks, partial-block waste, evictions, restores, and preemptions.</p></div>
+        <div class="watch"><div class="unit">QUALITY</div><b>Quantization delta</b><p>Long-context retrieval, task accuracy, perplexity proxy, and output agreement versus baseline.</p></div>
+      </div>
+      <div style="margin-top:30px">
+        <div class="gate"><b>GATE 1 · CORRECT</b><p>Exact-match outputs against the unoptimized path where the optimization is intended to be lossless; explicit quality tolerance where quantization is lossy.</p></div>
+        <div class="gate"><b>GATE 2 · ISOLATED</b><p>No cross-model, cross-adapter, or cross-tenant reuse. Cache keys and metrics must not expose sensitive prompt content.</p></div>
+        <div class="gate"><b>GATE 3 · FASTER</b><p>Representative load test shows the targeted SLO improves without unacceptable regression elsewhere. Include cold-cache and warm-cache runs.</p></div>
+        <div class="gate"><b>GATE 4 · STABLE</b><p>No refcount leaks, stale block-table entries, eviction races, or transfer storms under cancellation, preemption, and overload.</p></div>
+      </div>
+    </section>
+
+    <section id="check">
+      <div class="section-head">
+        <div class="eyebrow">07 · Knowledge check</div>
+        <h2>Can you defend the design?</h2>
+        <p>Open each answer only after you can explain it aloud.</p>
+      </div>
+      <div class="quiz">
+        <div class="quiz-item"><button class="quiz-q" aria-expanded="false"><span>Why does GQA reduce KV cache without reducing the number of query heads?</span><span>+</span></button><div class="quiz-a">Multiple query heads share each key/value head. The cache stores K and V for <em>KV heads</em>, while query projections can still have more heads. The attention kernel maps groups of query heads to a shared KV head.</div></div>
+        <div class="quiz-item"><button class="quiz-q" aria-expanded="false"><span>Why must a block hash include its parent hash?</span><span>+</span></button><div class="quiz-a">The same token block can appear after different histories. Its K/V depends on prior context and position, so block tokens alone are not a valid identity. Chaining the parent commits to the entire prefix.</div></div>
+        <div class="quiz-item"><button class="quiz-q" aria-expanded="false"><span>When can chunked prefill hurt?</span><span>+</span></button><div class="quiz-a">Chunks that are too small add scheduling and launch overhead and delay the long request’s first token. Poor policies can also over-prioritize decode, starving prefills. Tune against both TTFT and ITL distributions.</div></div>
+        <div class="quiz-item"><button class="quiz-q" aria-expanded="false"><span>Why can cache offload be slower than recomputation?</span><span>+</span></button><div class="quiz-a">Restoring a large KV region over a constrained link can exceed the cost of rerunning prefill, especially for shorter prefixes or when transfer cannot overlap with useful work. Compare bytes/bandwidth with measured recompute time.</div></div>
+        <div class="quiz-item"><button class="quiz-q" aria-expanded="false"><span>Why is conversation ID not a safe multi-turn cache key?</span><span>+</span></button><div class="quiz-a">History can be edited, summarized, truncated, re-templated, or served by another model/adapter while retaining the same ID. Cache validity depends on the exact token prefix plus model state, not a logical session label.</div></div>
+      </div>
+    </section>
+
+    <section id="references">
+      <div class="section-head">
+        <div class="eyebrow">Further study</div>
+        <h2>Primary mechanisms, deeper.</h2>
+      </div>
+      <div class="refs">
+        <a class="ref" href="https://docs.vllm.ai/en/v0.7.0/design/automatic_prefix_caching.html" target="_blank" rel="noreferrer"><b>vLLM · Automatic Prefix Caching</b><span>Block identity, sharing, and the hash-based design.</span></a>
+        <a class="ref" href="https://github.com/fvliang/claw_notes/blob/HEAD/arxiv/2023/vllm_pagedattention_sosp2023.md" target="_blank" rel="noreferrer"><b>PagedAttention · SOSP ’23 notes</b><span>Paper metadata, abstract, and links for the paging foundation.</span></a>
+        <a class="ref" href="https://github.com/vllm-project/vllm-project.github.io/blob/HEAD/_posts/2025-09-05-anatomy-of-vllm.md" target="_blank" rel="noreferrer"><b>Anatomy of vLLM</b><span>Engine flow, chunked prefill, and advanced scheduling features.</span></a>
+      </div>
+    </section>
+    <footer>STAGE 5 · EXIT CRITERION: DERIVE, DESIGN, MEASURE, DEFEND</footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  var inputs = {
+    layers: document.getElementById('layers'),
+    kvheads: document.getElementById('kvheads'),
+    headdim: document.getElementById('headdim'),
+    tokens: document.getElementById('tokens'),
+    seqs: document.getElementById('seqs'),
+    dtype: document.getElementById('dtype')
+  };
+  var presets = {
+    gqa8: { layers: 32, kvheads: 8, headdim: 128, tokens: 8192, seqs: 32 },
+    gqa70: { layers: 80, kvheads: 8, headdim: 128, tokens: 8192, seqs: 16 },
+    mha7: { layers: 32, kvheads: 32, headdim: 128, tokens: 4096, seqs: 16 }
+  };
+  function safeNum(el) { return Math.max(Number(el.min || 0), Number(el.value) || 0); }
+  function human(bytes) {
+    var units = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
+    var i = 0, val = bytes;
+    while (val >= 1024 && i < units.length - 1) { val /= 1024; i++; }
+    var digits = val >= 100 ? 0 : val >= 10 ? 1 : 2;
+    return val.toFixed(digits) + ' ' + units[i];
+  }
+  function calculate() {
+    var L = safeNum(inputs.layers);
+    var H = safeNum(inputs.kvheads);
+    var D = safeNum(inputs.headdim);
+    var T = safeNum(inputs.tokens);
+    var S = safeNum(inputs.seqs);
+    var B = Number(inputs.dtype.value);
+    var perToken = 2 * L * H * D * B;
+    var perSeq = perToken * T;
+    var total = perSeq * S;
+    document.getElementById('total').textContent = human(total);
+    document.getElementById('summary').textContent = S.toLocaleString() + ' sequences × ' + T.toLocaleString() + ' tokens';
+    document.getElementById('per-token').textContent = human(perToken);
+    document.getElementById('per-seq').textContent = human(perSeq);
+    document.getElementById('per-k').textContent = human(perToken * 1000);
+    document.getElementById('reduction').textContent = B === 2 ? 'baseline' : Math.round((1 - B / 2) * 100) + '% smaller';
+    document.getElementById('bar-fill').style.width = Math.max(2, B / 2 * 100) + '%';
+  }
+  Object.keys(inputs).forEach(function (key) { inputs[key].addEventListener('input', function () {
+    document.querySelectorAll('.preset').forEach(function (p) { p.classList.remove('selected'); });
+    calculate();
+  }); });
+  document.querySelectorAll('.preset').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var p = presets[button.dataset.preset];
+      Object.keys(p).forEach(function (key) { inputs[key].value = p[key]; });
+      document.querySelectorAll('.preset').forEach(function (x) { x.classList.remove('selected'); });
+      button.classList.add('selected');
+      calculate();
+    });
+  });
+  document.querySelectorAll('.quiz-q').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var item = button.parentElement;
+      var open = item.classList.toggle('open');
+      button.setAttribute('aria-expanded', String(open));
+    });
+  });
+  document.querySelectorAll('.copy-btn').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var text = document.getElementById(button.dataset.copy).innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        button.textContent = 'COPIED';
+        setTimeout(function () { button.textContent = 'COPY'; }, 1200);
+      }).catch(function () { button.textContent = 'SELECT MANUALLY'; });
+    });
+  });
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id); });
+        }
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    sections.forEach(function (section) { observer.observe(section); });
+  }
+  calculate();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:," />
+  <title>Systems Foundations · Stage 1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f1e9;
+      --surface: #fffdf8;
+      --surface-2: #ebe7dc;
+      --ink: #171a1c;
+      --muted: #555e61;
+      --line: #c9c5ba;
+      --strong-line: #8b8c84;
+      --accent: #007b78;
+      --accent-2: #d56a17;
+      --accent-soft: #d5eeea;
+      --amber-soft: #f8dec3;
+      --code: #152124;
+      --code-ink: #e9f3ef;
+      --success: #1c7452;
+      --danger: #ad3c2e;
+      --shadow: 0 18px 50px rgba(35, 32, 24, .09);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101416;
+        --surface: #171d1f;
+        --surface-2: #20282a;
+        --ink: #f2f0e8;
+        --muted: #bac3c3;
+        --line: #354144;
+        --strong-line: #687579;
+        --accent: #4cc7c1;
+        --accent-2: #f49a4d;
+        --accent-soft: #173a39;
+        --amber-soft: #4b3020;
+        --code: #0b0f10;
+        --code-ink: #e2efeb;
+        --success: #68d5a6;
+        --danger: #ff8d7c;
+        --shadow: 0 22px 60px rgba(0, 0, 0, .28);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 78px; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px),
+        var(--bg);
+      background-size: 36px 36px;
+      color: var(--ink);
+      font-family: "IBM Plex Sans", sans-serif;
+      line-height: 1.58;
+    }
+    a { color: inherit; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+    .topline {
+      position: sticky; top: 0; z-index: 20;
+      background: color-mix(in srgb, var(--bg) 92%, transparent);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+    .topline-inner {
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      min-height: 58px;
+    }
+    .stage-mark { display: flex; align-items: baseline; gap: 10px; font-weight: 700; }
+    .stage-mark b { color: var(--accent); font: 600 13px/1 "IBM Plex Mono", monospace; }
+    .chapter-nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+    .chapter-nav a {
+      padding: 7px 9px; color: var(--muted); text-decoration: none;
+      font: 500 12px/1 "IBM Plex Mono", monospace;
+      border-bottom: 2px solid transparent;
+    }
+    .chapter-nav a:hover, .chapter-nav a.active { color: var(--ink); border-color: var(--accent); }
+    .hero {
+      position: relative; overflow: hidden;
+      padding: clamp(58px, 9vw, 112px) 0 72px;
+      border-bottom: 1px solid var(--strong-line);
+      background: color-mix(in srgb, var(--surface) 93%, transparent);
+    }
+    .hero::after {
+      content: "01"; position: absolute; right: max(3vw, 20px); bottom: -52px;
+      font: 700 clamp(170px, 28vw, 390px)/.8 "IBM Plex Mono", monospace;
+      color: color-mix(in srgb, var(--accent) 11%, transparent); pointer-events: none;
+    }
+    .hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1.4fr .8fr; gap: 56px; align-items: end; }
+    .kicker { margin: 0 0 20px; color: var(--accent); font: 600 13px/1.3 "IBM Plex Mono", monospace; letter-spacing: .04em; }
+    h1 { max-width: 850px; margin: 0; font-size: clamp(46px, 8vw, 100px); line-height: .93; letter-spacing: -.055em; }
+    .dek { max-width: 720px; margin: 28px 0 0; font-size: clamp(19px, 2.4vw, 27px); line-height: 1.35; color: var(--muted); }
+    .hero-aside { border-top: 5px solid var(--accent-2); padding-top: 20px; }
+    .hero-aside p { margin: 0 0 14px; }
+    .hero-aside strong { font-size: 18px; }
+    .mini-list { margin: 14px 0 0; padding: 0; list-style: none; }
+    .mini-list li { padding: 8px 0; border-top: 1px solid var(--line); color: var(--muted); }
+    .mini-list code { color: var(--accent); }
+    .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 50px; padding: 70px 0 100px; }
+    .rail { position: sticky; top: 90px; align-self: start; }
+    .rail-title { margin: 0 0 12px; font: 600 11px/1.2 "IBM Plex Mono", monospace; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+    .rail a { display: block; padding: 9px 0; text-decoration: none; color: var(--muted); border-bottom: 1px solid var(--line); font-size: 14px; }
+    .rail a:hover { color: var(--accent); }
+    .rail-note { margin-top: 24px; padding: 16px 0; border-top: 4px solid var(--accent); font-size: 13px; color: var(--muted); }
+    .content { min-width: 0; }
+    .module { padding: 0 0 86px; }
+    .module + .module { padding-top: 74px; border-top: 1px solid var(--strong-line); }
+    .module-head { display: grid; grid-template-columns: 72px 1fr; gap: 20px; align-items: start; margin-bottom: 28px; }
+    .module-num { font: 500 25px/1 "IBM Plex Mono", monospace; color: var(--accent-2); }
+    h2 { margin: 0; font-size: clamp(33px, 5vw, 58px); line-height: 1.02; letter-spacing: -.04em; }
+    h3 { margin: 34px 0 12px; font-size: 24px; line-height: 1.2; }
+    h4 { margin: 0 0 8px; font-size: 17px; }
+    p { max-width: 800px; }
+    .lead { margin: 8px 0 0; color: var(--muted); font-size: 19px; }
+    .thesis {
+      display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start;
+      margin: 28px 0; padding: 22px 0; border-block: 1px solid var(--line);
+    }
+    .thesis .symbol { color: var(--accent); font: 600 38px/1 "IBM Plex Mono", monospace; }
+    .thesis p { margin: 0; font-size: 20px; font-weight: 600; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin: 24px 0; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 24px 0; }
+    .card { background: var(--surface); border: 1px solid var(--line); padding: 22px; box-shadow: var(--shadow); }
+    .card:nth-child(even) { box-shadow: none; }
+    .card p { margin: 7px 0 0; color: var(--muted); font-size: 15px; }
+    .tag { display: inline-block; margin-bottom: 12px; color: var(--accent); font: 600 11px/1 "IBM Plex Mono", monospace; letter-spacing: .05em; }
+    .compare { display: grid; grid-template-columns: 1fr 1fr; margin: 26px 0; border: 1px solid var(--strong-line); }
+    .compare > div { padding: 24px; background: var(--surface); }
+    .compare > div + div { border-left: 1px solid var(--strong-line); }
+    .compare h3 { margin: 0 0 12px; }
+    .compare ul { margin: 0; padding-left: 20px; color: var(--muted); }
+    .codebox { margin: 24px 0; background: var(--code); color: var(--code-ink); border-top: 4px solid var(--accent-2); }
+    .code-head { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 12px 16px; border-bottom: 1px solid #334347; color: #a9b9b7; font: 500 12px/1.2 "IBM Plex Mono", monospace; }
+    .copy-btn { border: 1px solid #516468; background: transparent; color: #d9e4e1; padding: 6px 10px; cursor: pointer; }
+    .copy-btn:hover { border-color: #fff; }
+    pre { margin: 0; padding: 18px; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; font: 13px/1.6 "IBM Plex Mono", monospace; }
+    code { font-family: "IBM Plex Mono", monospace; font-size: .92em; }
+    .token-key { color: #7ed7cf; }
+    .token-num { color: #ffb36b; }
+    .flow {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; align-items: stretch; margin: 28px 0;
+      border: 1px solid var(--strong-line); background: var(--surface);
+    }
+    .flow-step { position: relative; padding: 20px 14px; text-align: center; border-right: 1px solid var(--line); }
+    .flow-step:last-child { border-right: 0; }
+    .flow-step span { display: block; color: var(--accent-2); font: 600 12px/1 "IBM Plex Mono", monospace; margin-bottom: 8px; }
+    .flow-step strong { font-size: 14px; }
+    .flow-step:not(:last-child)::after { content: "→"; position: absolute; right: -10px; top: 50%; transform: translateY(-50%); z-index: 2; background: var(--surface); color: var(--accent); }
+    .memory-stack { margin: 26px 0; display: grid; gap: 7px; }
+    .memory-row { display: grid; grid-template-columns: 150px 110px 1fr 90px; align-items: center; gap: 16px; padding: 12px 16px; background: var(--surface); border-left: 6px solid var(--accent); }
+    .memory-row:nth-child(2) { border-left-color: #269994; }
+    .memory-row:nth-child(3) { border-left-color: #58aaa0; }
+    .memory-row:nth-child(4) { border-left-color: #d28c4d; }
+    .memory-row:nth-child(5) { border-left-color: var(--accent-2); }
+    .memory-row:nth-child(6) { border-left-color: #a94c3f; }
+    .memory-row span, .memory-row small { color: var(--muted); }
+    .bar { height: 8px; background: var(--surface-2); }
+    .bar i { display: block; height: 100%; background: var(--accent); }
+    .equation { margin: 26px 0; padding: 26px; background: var(--amber-soft); border-block: 1px solid var(--accent-2); }
+    .equation .formula { font: 600 clamp(20px, 3vw, 30px)/1.4 "IBM Plex Mono", monospace; overflow-wrap: anywhere; }
+    .equation p { margin-bottom: 0; color: var(--muted); }
+    .calc { margin: 30px 0; background: var(--surface); border: 1px solid var(--strong-line); }
+    .calc-head { padding: 22px 24px 0; }
+    .calc-head h3 { margin: 0; }
+    .calc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); margin-top: 20px; border-top: 1px solid var(--line); }
+    .field { background: var(--surface); padding: 18px; }
+    .field label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 13px; }
+    .field input { width: 100%; padding: 11px; border: 1px solid var(--strong-line); background: var(--bg); color: var(--ink); border-radius: 0; }
+    .calc-result { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--strong-line); border-top: 1px solid var(--strong-line); }
+    .metric { background: var(--accent-soft); padding: 20px; }
+    .metric strong { display: block; font: 600 28px/1.1 "IBM Plex Mono", monospace; color: var(--accent); }
+    .metric span { font-size: 13px; color: var(--muted); }
+    .callout { margin: 24px 0; padding: 20px 24px; background: var(--accent-soft); border-top: 4px solid var(--accent); }
+    .callout strong { display: block; margin-bottom: 5px; }
+    .callout p { margin: 0; color: var(--muted); }
+    .checklist { margin: 20px 0; padding: 0; list-style: none; }
+    .checklist li { position: relative; padding: 10px 0 10px 30px; border-bottom: 1px solid var(--line); }
+    .checklist li::before { content: "✓"; position: absolute; left: 0; top: 10px; color: var(--success); font-weight: 700; }
+    .lab { margin: 28px 0; border-top: 6px solid var(--accent-2); background: var(--surface); box-shadow: var(--shadow); }
+    .lab-head { display: grid; grid-template-columns: 1fr auto; gap: 20px; padding: 24px; border-bottom: 1px solid var(--line); }
+    .lab-head h3 { margin: 0 0 6px; }
+    .lab-head p { margin: 0; color: var(--muted); }
+    .duration { align-self: start; padding: 7px 10px; background: var(--amber-soft); font: 600 12px/1 "IBM Plex Mono", monospace; white-space: nowrap; }
+    .lab-body { padding: 0 24px 24px; }
+    .lab-body ol { padding-left: 20px; }
+    .result-note { padding: 14px 16px; background: var(--surface-2); color: var(--muted); font-size: 14px; }
+    .quiz { margin-top: 36px; }
+    .question { padding: 22px 0; border-top: 1px solid var(--line); }
+    .question p { margin: 0 0 12px; font-weight: 600; }
+    .answers { display: grid; gap: 8px; }
+    .answer { text-align: left; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); cursor: pointer; }
+    .answer:hover { border-color: var(--accent); }
+    .answer.correct { border-color: var(--success); color: var(--success); background: color-mix(in srgb, var(--success) 10%, var(--surface)); }
+    .answer.wrong { border-color: var(--danger); color: var(--danger); }
+    .feedback { min-height: 24px; margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+    .next-stage { margin-top: 30px; padding: 36px; background: var(--code); color: var(--code-ink); display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center; }
+    .next-stage h2 { font-size: clamp(28px, 4vw, 45px); }
+    .next-stage p { color: #aebcba; }
+    .arrow-mark { font: 500 52px/1 "IBM Plex Mono", monospace; color: #72d8d1; }
+    footer { padding: 26px 0 50px; color: var(--muted); font: 500 12px/1.6 "IBM Plex Mono", monospace; border-top: 1px solid var(--line); }
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 38px; }
+      .layout { grid-template-columns: 1fr; }
+      .rail { display: none; }
+      .flow { grid-template-columns: 1fr; }
+      .flow-step { text-align: left; border-right: 0; border-bottom: 1px solid var(--line); }
+      .flow-step:last-child { border-bottom: 0; }
+      .flow-step:not(:last-child)::after { content: "↓"; top: auto; right: 16px; bottom: -12px; transform: none; }
+      .memory-row { grid-template-columns: 120px 90px 1fr; }
+      .memory-row small { grid-column: 1 / -1; }
+      .calc-grid, .calc-result { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 680px) {
+      .shell { width: min(100% - 24px, 1180px); }
+      .topline-inner { align-items: flex-start; padding: 11px 0; }
+      .chapter-nav { display: none; }
+      .hero { padding-top: 48px; }
+      .hero::after { bottom: -20px; right: -15px; }
+      .layout { padding-top: 50px; }
+      .module { padding-bottom: 64px; }
+      .module + .module { padding-top: 56px; }
+      .module-head { grid-template-columns: 46px 1fr; gap: 8px; }
+      .module-num { font-size: 18px; padding-top: 7px; }
+      .grid-2, .grid-3, .compare { grid-template-columns: 1fr; }
+      .compare > div + div { border-left: 0; border-top: 1px solid var(--strong-line); }
+      .memory-row { grid-template-columns: 1fr 1fr; gap: 7px 12px; }
+      .memory-row .bar { grid-column: 1 / -1; }
+      .memory-row small { grid-column: 1 / -1; }
+      .lab-head { grid-template-columns: 1fr; }
+      .duration { justify-self: start; }
+      .lab-body, .lab-head { padding-left: 18px; padding-right: 18px; }
+      .next-stage { grid-template-columns: 1fr; padding: 28px; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <div class="topline">
+    <div class="shell topline-inner">
+      <div class="stage-mark"><b>STAGE 01 / 12</b><span>Systems Foundations</span></div>
+      <nav class="chapter-nav" aria-label="Chapter navigation">
+        <a href="#native">Native</a><a href="#python">Python</a><a href="#linux">Linux</a><a href="#memory">Memory</a><a href="#execution">Execution</a><a href="#labs">Labs</a>
+      </nav>
+    </div>
+  </div>
+
+  <header class="hero">
+    <div class="shell hero-grid">
+      <div>
+        <p class="kicker">THE MACHINE UNDER THE MODEL</p>
+        <h1>Systems<br>Foundations</h1>
+        <p class="dek">Inference stops looking like magic when you can see the bytes moving. Learn the languages, operating-system mechanics, memory limits, and execution models that every serving engine is built on.</p>
+      </div>
+      <aside class="hero-aside">
+        <strong>By the end, you can explain:</strong>
+        <ul class="mini-list">
+          <li>Why Python controls the hot path but rarely executes it</li>
+          <li>Why decode is often limited by bandwidth, not FLOPs</li>
+          <li>How Linux scheduling, NUMA, and page faults surface as latency</li>
+          <li>When a GPU wins—and when a CPU is the better machine</li>
+        </ul>
+      </aside>
+    </div>
+  </header>
+
+  <div class="shell layout">
+    <aside class="rail" aria-label="On this page">
+      <p class="rail-title">On this page</p>
+      <a href="#mental-model">Core mental model</a>
+      <a href="#native">C++ / Rust</a>
+      <a href="#python">Python performance</a>
+      <a href="#linux">Linux substrate</a>
+      <a href="#memory">Memory hierarchy</a>
+      <a href="#execution">CPU vs GPU</a>
+      <a href="#labs">Runnable labs</a>
+      <a href="#check">Knowledge check</a>
+      <div class="rail-note">Read once for the model. Return with a terminal for the labs.</div>
+    </aside>
+
+    <main class="content">
+      <section class="module" id="mental-model">
+        <div class="module-head"><span class="module-num">00</span><div><h2>The core mental model</h2><p class="lead">Performance is the interaction of work, movement, and waiting.</p></div></div>
+        <div class="thesis"><span class="symbol">∴</span><p>A fast model server does not merely compute fewer operations. It keeps expensive hardware busy while moving the fewest possible bytes through the slowest parts of the system.</p></div>
+        <div class="grid-3">
+          <article class="card"><span class="tag">WORK</span><h4>Arithmetic</h4><p>Matrix multiplies, attention, normalization, sampling. Measured as operations or FLOPs.</p></article>
+          <article class="card"><span class="tag">MOVEMENT</span><h4>Data traffic</h4><p>Weights, activations, and KV cache traveling through registers, caches, HBM, PCIe, and networks.</p></article>
+          <article class="card"><span class="tag">WAITING</span><h4>Latency gaps</h4><p>Kernel launches, synchronization, page faults, queueing, branch divergence, and idle accelerators.</p></article>
+        </div>
+        <div class="callout"><strong>The diagnostic question</strong><p>When something is slow, ask in order: <em>Are we compute-bound, memory-bound, launch-bound, or waiting on another component?</em></p></div>
+      </section>
+
+      <section class="module" id="native">
+        <div class="module-head"><span class="module-num">01</span><div><h2>C++ or Rust: owning the hot path</h2><p class="lead">Python describes the operation. Native code owns the buffers, lifetimes, and tight loops.</p></div></div>
+        <div class="compare">
+          <div><h3>C++</h3><ul><li>Direct control and a huge systems ecosystem</li><li>RAII ties resource release to object lifetime</li><li>Undefined behavior makes discipline essential</li><li>Common in CUDA runtimes and inference engines</li></ul></div>
+          <div><h3>Rust</h3><ul><li>Ownership and borrowing checked at compile time</li><li>No garbage collector in the request path</li><li>Strong concurrency safety</li><li>Excellent for schedulers, gateways, and control planes</li></ul></div>
+        </div>
+        <h3>Four ideas to know cold</h3>
+        <div class="grid-2">
+          <article class="card"><span class="tag">1 · LAYOUT</span><h4>Contiguous beats scattered</h4><p>A flat vector lets hardware prefetchers stream cache lines. Pointer-heavy objects turn one logical walk into many dependent memory loads.</p></article>
+          <article class="card"><span class="tag">2 · LIFETIME</span><h4>Allocate outside the loop</h4><p>Reserve workspaces and KV pages before decode. Allocation introduces locks, metadata work, and unpredictable pauses.</p></article>
+          <article class="card"><span class="tag">3 · OWNERSHIP</span><h4>One buffer, clear responsibility</h4><p>Copies disappear when APIs pass views, spans, or references instead of constructing new containers.</p></article>
+          <article class="card"><span class="tag">4 · DISPATCH</span><h4>Indirect work has a cost</h4><p>Virtual calls, dynamic types, and tiny operators can dominate when the useful operation itself is small.</p></article>
+        </div>
+        <div class="codebox">
+          <div class="code-head"><span>C++ · preallocate and reuse</span><button class="copy-btn" type="button">Copy</button></div>
+          <pre><code>std::vector&lt;float&gt; output(batch * hidden);
+
+for (int token = 0; token &lt; max_new_tokens; ++token) {
+  // Reuse output: no heap allocation in the decode loop.
+  decode_step(model, kv_cache, output.data());
+  sample_next_token(output);
+}</code></pre>
+        </div>
+        <div class="codebox">
+          <div class="code-head"><span>Rust · borrow the buffer</span><button class="copy-btn" type="button">Copy</button></div>
+          <pre><code>let mut output = vec![0.0_f32; batch * hidden];
+
+for _ in 0..max_new_tokens {
+    decode_step(&amp;model, &amp;mut kv_cache, &amp;mut output);
+    sample_next_token(&amp;output);
+}</code></pre>
+        </div>
+        <div class="callout"><strong>Hot-path rule of thumb</strong><p>If it executes once per request, Python may be fine. If it executes once per layer or once per token, it deserves native code, fusion, or graph capture.</p></div>
+      </section>
+
+      <section class="module" id="python">
+        <div class="module-head"><span class="module-num">02</span><div><h2>Python performance: move the loop</h2><p class="lead">The winning move is usually not “make Python faster.” It is “make Python issue less work.”</p></div></div>
+        <p>A Python loop pays for bytecode dispatch, boxed objects, reference counting, and dynamic type checks. NumPy and PyTorch accept a high-level operation, then run the loop in optimized native code. For GPU work, Python also adds kernel-launch and framework-dispatch overhead.</p>
+        <div class="flow" aria-label="Python to GPU dispatch flow">
+          <div class="flow-step"><span>01</span><strong>Python op</strong></div>
+          <div class="flow-step"><span>02</span><strong>Framework dispatch</strong></div>
+          <div class="flow-step"><span>03</span><strong>Kernel launch</strong></div>
+          <div class="flow-step"><span>04</span><strong>GPU work</strong></div>
+          <div class="flow-step"><span>05</span><strong>Synchronize</strong></div>
+        </div>
+        <h3>The optimization ladder</h3>
+        <div class="grid-2">
+          <article class="card"><span class="tag">STEP 1</span><h4>Vectorize</h4><p>Replace element-by-element Python with one array or tensor operation.</p></article>
+          <article class="card"><span class="tag">STEP 2</span><h4>Batch</h4><p>Combine requests or tokens so every dispatch performs more useful work.</p></article>
+          <article class="card"><span class="tag">STEP 3</span><h4>Fuse</h4><p>Keep intermediate values in registers or shared memory instead of materializing them in HBM.</p></article>
+          <article class="card"><span class="tag">STEP 4</span><h4>Capture / compile</h4><p>Use graph capture or compilation to remove repeated framework and launch overhead.</p></article>
+        </div>
+        <div class="codebox">
+          <div class="code-head"><span>Python · same reduction, different execution</span><button class="copy-btn" type="button">Copy</button></div>
+          <pre><code>import numpy as np
+
+x = np.arange(10_000_000, dtype=np.int64)
+
+# Slow: 10 million Python iterations
+python_total = sum(int(v) for v in x)
+
+# Fast: one Python call, native vectorized loop
+numpy_total = x.sum()</code></pre>
+        </div>
+        <div class="callout"><strong>Benchmark correctly</strong><p>Warm up first. Use repeated runs. For GPU timing, synchronize before stopping the clock—GPU calls are asynchronous, so naive wall-clock timing measures launch time instead of execution.</p></div>
+      </section>
+
+      <section class="module" id="linux">
+        <div class="module-head"><span class="module-num">03</span><div><h2>Linux: the substrate</h2><p class="lead">A serving engine is a Linux process competing for CPU time, memory pages, file descriptors, and device access.</p></div></div>
+        <div class="grid-2">
+          <article class="card"><span class="tag">PROCESS / THREAD</span><h4>Isolation versus sharing</h4><p>Processes have separate virtual address spaces. Threads share one address space, making queues and CUDA context access cheaper—but synchronization more dangerous.</p></article>
+          <article class="card"><span class="tag">VIRTUAL MEMORY</span><h4>Addresses are mappings</h4><p>The pointer your program sees is virtual. Page tables map it to physical memory. A missing mapping triggers a page fault; a major fault may wait on storage.</p></article>
+          <article class="card"><span class="tag">NUMA</span><h4>CPU memory is not equally near</h4><p>On multi-socket hosts, a CPU can access remote memory, but with lower bandwidth and higher latency. Pin workers and allocate near their NIC or GPU.</p></article>
+          <article class="card"><span class="tag">CGROUPS</span><h4>Containers inherit hard limits</h4><p>A pod can be throttled even when the machine looks idle. CPU quotas and memory pressure appear as latency spikes at the application level.</p></article>
+        </div>
+        <h3>A request’s path through the host</h3>
+        <div class="flow" aria-label="Request path through Linux and GPU">
+          <div class="flow-step"><span>NIC</span><strong>packet arrival</strong></div>
+          <div class="flow-step"><span>KERNEL</span><strong>socket buffer</strong></div>
+          <div class="flow-step"><span>CPU</span><strong>tokenize + schedule</strong></div>
+          <div class="flow-step"><span>DMA</span><strong>host → device</strong></div>
+          <div class="flow-step"><span>GPU</span><strong>model step</strong></div>
+        </div>
+        <div class="codebox">
+          <div class="code-head"><span>Terminal · first-response triage</span><button class="copy-btn" type="button">Copy</button></div>
+          <pre><code># Process threads, CPU placement, context switches
+pidstat -t -p $PID 1
+
+# Page faults and memory behavior
+perf stat -e page-faults,cache-misses,context-switches -p $PID
+
+# NUMA topology and binding
+numactl --hardware
+numactl --show
+
+# Container limits (cgroup v2)
+cat /sys/fs/cgroup/cpu.max
+cat /sys/fs/cgroup/memory.current</code></pre>
+        </div>
+        <div class="callout"><strong>When token latency spikes</strong><p>Correlate the event across layers. Check queue depth, CPU throttling, page faults, host-to-device traffic, GPU utilization, and kernel gaps on the same timeline. A single dashboard rarely tells the whole story.</p></div>
+      </section>
+
+      <section class="module" id="memory">
+        <div class="module-head"><span class="module-num">04</span><div><h2>Memory hierarchy: the speed of distance</h2><p class="lead">Capacity grows as memory moves farther from execution. Bandwidth falls, latency rises, and software must reuse data before it escapes.</p></div></div>
+        <div class="memory-stack" aria-label="Conceptual memory hierarchy">
+          <div class="memory-row"><strong>Registers</strong><span>tiny</span><div class="bar"><i style="width:100%"></i></div><small>per-thread operands</small></div>
+          <div class="memory-row"><strong>L1 / shared</strong><span>KBs</span><div class="bar"><i style="width:86%"></i></div><small>explicit or automatic reuse</small></div>
+          <div class="memory-row"><strong>L2 cache</strong><span>MBs</span><div class="bar"><i style="width:70%"></i></div><small>shared on-chip cache</small></div>
+          <div class="memory-row"><strong>GPU HBM</strong><span>GBs</span><div class="bar"><i style="width:48%"></i></div><small>weights + KV cache</small></div>
+          <div class="memory-row"><strong>CPU DRAM</strong><span>100s GB</span><div class="bar"><i style="width:25%"></i></div><small>offload and staging</small></div>
+          <div class="memory-row"><strong>NVMe</strong><span>TBs</span><div class="bar"><i style="width:8%"></i></div><small>coldest tier</small></div>
+        </div>
+        <p><strong>These bars are conceptual, not to scale.</strong> Exact latency and bandwidth vary by architecture. What matters is the ordering and the widening gap between on-chip reuse and off-chip movement.</p>
+        <h3>Worked example: one decode token</h3>
+        <p>Consider an 8-billion-parameter dense model with 16-bit weights. Its weight payload is approximately 16 GB. If a single-token decode step must stream those weights once from an H100 SXM’s HBM, a simple bandwidth roof is:</p>
+        <div class="equation">
+          <div class="formula">time ≥ bytes moved ÷ bandwidth<br>≈ 16 GB ÷ 3.35 TB/s<br>≈ 4.8 ms/token</div>
+          <p>That implies a theoretical ceiling near 209 tokens/s before kernels, synchronization, cache effects, KV reads, and other overhead. The example uses the published peak bandwidth of the 80 GB H100 SXM; real throughput is lower.</p>
+        </div>
+        <h3>Arithmetic intensity decides the bottleneck</h3>
+        <p><strong>Arithmetic intensity</strong> is useful operations divided by bytes moved. A kernel with low intensity hits the memory-bandwidth roof first. A kernel with high intensity can approach the compute roof.</p>
+        <div class="calc" id="roofline-calculator">
+          <div class="calc-head"><span class="tag">INTERACTIVE</span><h3>Roofline sanity check</h3><p>Enter hardware peaks and a kernel’s arithmetic intensity. This is a bound—not a benchmark.</p></div>
+          <div class="calc-grid">
+            <div class="field"><label for="compute">Peak compute (TFLOP/s)</label><input id="compute" type="number" min="0" step="1" value="989"></div>
+            <div class="field"><label for="bandwidth">Memory bandwidth (TB/s)</label><input id="bandwidth" type="number" min="0" step="0.01" value="3.35"></div>
+            <div class="field"><label for="intensity">Arithmetic intensity (FLOP/byte)</label><input id="intensity" type="number" min="0" step="0.1" value="1"></div>
+          </div>
+          <div class="calc-result">
+            <div class="metric"><strong id="ridge">295.2</strong><span>FLOP/byte ridge point</span></div>
+            <div class="metric"><strong id="attainable">3.35</strong><span>TFLOP/s attainable roof</span></div>
+            <div class="metric"><strong id="bound">Memory</strong><span>predicted limiting roof</span></div>
+          </div>
+        </div>
+        <div class="callout"><strong>Why batching works</strong><p>With a larger batch, each fetched weight contributes to more token computations. Operations rise faster than weight traffic, arithmetic intensity increases, and the kernel can move toward the compute-bound side of the roofline.</p></div>
+      </section>
+
+      <section class="module" id="execution">
+        <div class="module-head"><span class="module-num">05</span><div><h2>CPU vs GPU execution</h2><p class="lead">A CPU minimizes the time for one irregular task. A GPU maximizes the rate of many similar tasks.</p></div></div>
+        <div class="compare">
+          <div><h3>CPU</h3><ul><li>Few sophisticated cores</li><li>Large caches and branch prediction</li><li>Excellent single-thread latency</li><li>Good for tokenization, scheduling, networking, sampling</li></ul></div>
+          <div><h3>GPU</h3><ul><li>Thousands of simpler execution lanes</li><li>Massive throughput under regular parallel work</li><li>High-bandwidth device memory</li><li>Good for GEMM, attention, and batched tensor operations</li></ul></div>
+        </div>
+        <h3>SIMT, without the hand-waving</h3>
+        <p>CUDA organizes threads into warps of 32. A warp issues one instruction across active lanes. If lanes take different branches, the hardware executes each path while masking inactive lanes. That is divergence: the program remains correct, but parallel efficiency falls.</p>
+        <div class="grid-3">
+          <article class="card"><span class="tag">GRID</span><h4>Whole launch</h4><p>All thread blocks created for one kernel invocation.</p></article>
+          <article class="card"><span class="tag">BLOCK</span><h4>Cooperating group</h4><p>Threads that can synchronize and share fast on-chip memory.</p></article>
+          <article class="card"><span class="tag">WARP</span><h4>Execution unit</h4><p>32 threads advancing together through the same instruction stream.</p></article>
+        </div>
+        <h3>Prefill and decode foreshadow Stage 3</h3>
+        <div class="compare">
+          <div><h3>Prefill</h3><p>Many prompt tokens are processed together. Matrix multiplies are large, reuse is high, and the GPU can be compute-bound.</p></div>
+          <div><h3>Decode</h3><p>Each sequence advances by one token. Operations are narrow, weights are repeatedly streamed, and the GPU is often memory-bandwidth-bound.</p></div>
+        </div>
+        <ul class="checklist">
+          <li>Use the CPU for irregular control flow and latency-sensitive orchestration.</li>
+          <li>Use the GPU when work can be expressed as large, regular tensor operations.</li>
+          <li>Batch enough work to amortize launches and reuse weights.</li>
+          <li>Measure transfer time whenever data crosses PCIe or a network.</li>
+        </ul>
+      </section>
+
+      <section class="module" id="labs">
+        <div class="module-head"><span class="module-num">06</span><div><h2>Runnable labs</h2><p class="lead">Do these in order. Each isolates one layer of the system before you combine them.</p></div></div>
+
+        <article class="lab">
+          <div class="lab-head"><div><span class="tag">LAB 1 · PYTHON</span><h3>Move the reduction loop</h3><p>Compare CPython iteration with NumPy’s native loop.</p></div><span class="duration">20 MIN</span></div>
+          <div class="lab-body">
+            <ol><li>Save the script below as <code>bench_sum.py</code>.</li><li>Run it three times; compare the medians, not one lucky result.</li><li>Explain the difference without saying “NumPy is magic.”</li></ol>
+            <div class="codebox"><div class="code-head"><span>bench_sum.py</span><button class="copy-btn" type="button">Copy</button></div><pre><code>import time
+import numpy as np
+
+x = np.arange(10_000_000, dtype=np.int64)
+
+def timed(label, fn):
+    start = time.perf_counter()
+    value = fn()
+    dt = time.perf_counter() - start
+    print(f"{label:12s} {dt:.4f}s  result={value}")
+
+timed("python", lambda: sum(int(v) for v in x))
+timed("numpy",  lambda: x.sum())</code></pre></div>
+            <div class="result-note"><strong>Observe:</strong> same result, different dispatch granularity. Your exact timing depends on CPU, Python, NumPy build, and power state.</div>
+          </div>
+        </article>
+
+        <article class="lab">
+          <div class="lab-head"><div><span class="tag">LAB 2 · MEMORY</span><h3>Make cache misses visible</h3><p>Walk the same array sequentially and with a large stride.</p></div><span class="duration">35 MIN</span></div>
+          <div class="lab-body">
+            <ol><li>Compile with optimization.</li><li>Measure both modes with <code>perf stat</code>.</li><li>Compare elapsed time, cache misses, and instructions.</li></ol>
+            <div class="codebox"><div class="code-head"><span>C++ · stride.cpp</span><button class="copy-btn" type="button">Copy</button></div><pre><code>#include &lt;chrono&gt;
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+
+int main(int argc, char** argv) {
+  const size_t n = 64ull * 1024 * 1024;
+  const size_t stride = argc &gt; 1 ? 1024 : 1;
+  std::vector&lt;int&gt; a(n, 1);
+  volatile long long sum = 0;
+  auto t0 = std::chrono::steady_clock::now();
+  for (size_t offset = 0; offset &lt; stride; ++offset)
+    for (size_t i = offset; i &lt; n; i += stride) sum += a[i];
+  auto dt = std::chrono::duration&lt;double&gt;(
+      std::chrono::steady_clock::now() - t0).count();
+  std::cout &lt;&lt; sum &lt;&lt; " " &lt;&lt; dt &lt;&lt; "s\n";
+}</code></pre></div>
+            <div class="codebox"><div class="code-head"><span>Build + measure</span><button class="copy-btn" type="button">Copy</button></div><pre><code>g++ -O3 -std=c++17 stride.cpp -o stride
+perf stat -e cycles,instructions,cache-references,cache-misses ./stride
+perf stat -e cycles,instructions,cache-references,cache-misses ./stride strided</code></pre></div>
+            <div class="result-note"><strong>Observe:</strong> both runs touch every element. The order changes locality, prefetch effectiveness, and memory-level parallelism.</div>
+          </div>
+        </article>
+
+        <article class="lab">
+          <div class="lab-head"><div><span class="tag">LAB 3 · ROOFLINE</span><h3>Classify prefill and decode</h3><p>Turn workload dimensions into an explicit bottleneck hypothesis.</p></div><span class="duration">30 MIN</span></div>
+          <div class="lab-body">
+            <ol><li>Pick a model and precision. Compute weight bytes: parameters × bytes per parameter.</li><li>Estimate operations and bytes moved for one prefill pass and one decode step.</li><li>Compute FLOP/byte, then use the calculator above to classify each point.</li><li>State what optimization follows: more batching, fewer bytes, or faster math.</li></ol>
+            <div class="equation"><div class="formula">intensity = useful FLOPs ÷ bytes moved<br>ridge point = peak FLOP/s ÷ peak byte/s</div><p>Below the ridge point, bandwidth is the tighter roof. Above it, compute is the tighter roof.</p></div>
+          </div>
+        </article>
+
+        <article class="lab">
+          <div class="lab-head"><div><span class="tag">LAB 4 · GPU TIMING</span><h3>Catch asynchronous timing</h3><p>See why a CUDA call can appear impossibly fast.</p></div><span class="duration">20 MIN</span></div>
+          <div class="lab-body">
+            <div class="codebox"><div class="code-head"><span>PyTorch · synchronize before timing</span><button class="copy-btn" type="button">Copy</button></div><pre><code>import time, torch
+
+x = torch.randn(4096, 4096, device="cuda", dtype=torch.float16)
+for _ in range(10):
+    _ = x @ x                       # warm-up
+
+torch.cuda.synchronize()
+start = time.perf_counter()
+for _ in range(20):
+    y = x @ x
+torch.cuda.synchronize()
+elapsed = time.perf_counter() - start
+print(f"{elapsed / 20 * 1000:.3f} ms/matmul")</code></pre></div>
+            <div class="result-note"><strong>Observe:</strong> remove both synchronizations and the number mostly measures how quickly Python enqueues work.</div>
+          </div>
+        </article>
+      </section>
+
+      <section class="module" id="check">
+        <div class="module-head"><span class="module-num">07</span><div><h2>Knowledge check</h2><p class="lead">Choose once. The explanation matters more than the score.</p></div></div>
+        <div class="quiz">
+          <div class="question" data-answer="1"><p>1. Why does vectorized NumPy usually beat a Python loop?</p><div class="answers"><button class="answer">It uses fewer CPU cores</button><button class="answer">It moves the loop into optimized native code</button><button class="answer">It stores all values in registers</button></div><div class="feedback" aria-live="polite"></div></div>
+          <div class="question" data-answer="2"><p>2. A kernel has 1 FLOP/byte on hardware with a 295 FLOP/byte ridge point. What is the likely roof?</p><div class="answers"><button class="answer">Compute throughput</button><button class="answer">Network latency</button><button class="answer">Memory bandwidth</button></div><div class="feedback" aria-live="polite"></div></div>
+          <div class="question" data-answer="0"><p>3. What should happen to reusable decode buffers?</p><div class="answers"><button class="answer">Preallocate them outside the token loop</button><button class="answer">Allocate them separately for every layer</button><button class="answer">Convert them to Python lists</button></div><div class="feedback" aria-live="polite"></div></div>
+          <div class="question" data-answer="1"><p>4. Why can branch divergence reduce GPU efficiency?</p><div class="answers"><button class="answer">It makes HBM smaller</button><button class="answer">Warp lanes must execute paths under masks</button><button class="answer">It disables virtual memory</button></div><div class="feedback" aria-live="polite"></div></div>
+          <div class="question" data-answer="2"><p>5. What must you do before stopping a naive wall-clock GPU timer?</p><div class="answers"><button class="answer">Clear the CPU cache</button><button class="answer">Restart the Python process</button><button class="answer">Synchronize the GPU</button></div><div class="feedback" aria-live="polite"></div></div>
+        </div>
+        <div class="next-stage"><div><span class="tag">READY FOR STAGE 2</span><h2>GPU Architecture Fundamentals</h2><p>Next: streaming multiprocessors, CUDA cores, tensor cores, occupancy, VRAM, and the metrics behind <code>nvidia-smi</code>.</p></div><div class="arrow-mark">02→</div></div>
+      </section>
+    </main>
+  </div>
+
+  <footer><div class="shell">Stage 1 · Systems Foundations<br>Use measured values from your own hardware before making capacity or cost decisions.</div></footer>
+
+  <script>
+    const $ = (s, root = document) => root.querySelector(s);
+    const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+
+    $$('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const code = btn.closest('.codebox').querySelector('code').innerText;
+        try {
+          await navigator.clipboard.writeText(code);
+          const old = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(() => btn.textContent = old, 1400);
+        } catch {
+          btn.textContent = 'Select text';
+        }
+      });
+    });
+
+    function updateRoofline() {
+      const compute = Math.max(0, parseFloat($('#compute').value) || 0);
+      const bandwidth = Math.max(0, parseFloat($('#bandwidth').value) || 0);
+      const intensity = Math.max(0, parseFloat($('#intensity').value) || 0);
+      const ridge = bandwidth ? compute / bandwidth : 0;
+      const memoryRoof = bandwidth * intensity;
+      const attainable = Math.min(compute, memoryRoof);
+      $('#ridge').textContent = ridge.toFixed(ridge >= 100 ? 1 : 2);
+      $('#attainable').textContent = attainable.toFixed(attainable >= 100 ? 1 : 2);
+      $('#bound').textContent = compute <= memoryRoof ? 'Compute' : 'Memory';
+    }
+    ['compute', 'bandwidth', 'intensity'].forEach(id => $('#' + id).addEventListener('input', updateRoofline));
+    updateRoofline();
+
+    $$('.question').forEach(q => {
+      $$('.answer', q).forEach((button, index) => {
+        button.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = 'true';
+          const right = Number(q.dataset.answer);
+          $$('.answer', q)[right].classList.add('correct');
+          if (index !== right) button.classList.add('wrong');
+          $('.feedback', q).textContent = index === right
+            ? 'Correct — that is the systems-level explanation.'
+            : 'Not quite. The highlighted answer identifies the actual mechanism.';
+        });
+      });
+    });
+
+    const navLinks = $$('.chapter-nav a');
+    const sections = navLinks.map(a => $(a.getAttribute('href'))).filter(Boolean);
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    sections.forEach(section => observer.observe(section));
+  </script>
+</body>
+</html>

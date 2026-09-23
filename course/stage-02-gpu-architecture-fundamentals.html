@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:," />
+  <title>Stage 2: GPU Architecture Fundamentals</title>
+  <style>
+    :root {
+      --bg: #f3f5f6;
+      --paper: #ffffff;
+      --ink: #10171a;
+      --muted: #4b5b62;
+      --line: #c8d0d4;
+      --line-strong: #87979f;
+      --cyan: #007f8f;
+      --cyan-soft: #d9f0f1;
+      --amber: #c45a00;
+      --amber-soft: #fff0df;
+      --green: #11734b;
+      --green-soft: #dcf3e7;
+      --red: #a9352a;
+      --code: #10191d;
+      --code-ink: #dce8eb;
+      --shadow: 0 8px 24px rgba(25, 38, 45, .08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0e1417;
+        --paper: #151d21;
+        --ink: #eef3f4;
+        --muted: #b3c0c6;
+        --line: #344248;
+        --line-strong: #64777f;
+        --cyan: #4bc1ce;
+        --cyan-soft: #14373c;
+        --amber: #ff9a4a;
+        --amber-soft: #3b2819;
+        --green: #5dc695;
+        --green-soft: #17392a;
+        --red: #ff8176;
+        --code: #090e10;
+        --code-ink: #e3ecef;
+        --shadow: none;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px),
+        var(--bg);
+      background-size: 32px 32px;
+      color: var(--ink);
+      font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.62;
+    }
+    a { color: var(--cyan); text-underline-offset: 3px; }
+    button, input { font: inherit; }
+    .shell { max-width: 1180px; margin: 0 auto; padding: 28px 22px 72px; }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(300px, .75fr);
+      gap: 0;
+      background: var(--paper);
+      border: 1px solid var(--line-strong);
+      box-shadow: var(--shadow);
+    }
+    .hero-copy { padding: clamp(30px, 5vw, 72px); }
+    .stage-tag {
+      display: inline-flex; gap: 10px; align-items: center;
+      color: var(--amber); font-size: .78rem; font-weight: 800;
+      letter-spacing: .12em; text-transform: uppercase;
+    }
+    .stage-tag::before { content: "02"; color: var(--paper); background: var(--amber); padding: 4px 8px; letter-spacing: 0; }
+    h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; line-height: 1.08; margin: 0; }
+    h1 { font-size: clamp(2.55rem, 6vw, 5.8rem); max-width: 900px; margin-top: 18px; letter-spacing: -.045em; }
+    .dek { color: var(--muted); font-size: clamp(1.05rem, 2vw, 1.34rem); max-width: 720px; margin: 25px 0 0; }
+    .hero-spec {
+      background: var(--code); color: var(--code-ink);
+      padding: 32px 28px; display: flex; flex-direction: column; justify-content: space-between;
+      border-left: 1px solid var(--line-strong);
+    }
+    .hero-spec svg { width: 100%; height: auto; display: block; }
+    .legend { display: grid; gap: 10px; margin-top: 26px; font-size: .85rem; color: #b9c8cd; }
+    .legend span { display: flex; align-items: center; gap: 10px; }
+    .swatch { width: 11px; height: 11px; display: inline-block; }
+    .swatch.cyan { background: #42bac7; } .swatch.amber { background: #ff9645; } .swatch.gray { background: #697a82; }
+    .nav {
+      margin: 18px 0 44px; border: 1px solid var(--line-strong); background: var(--paper);
+      display: grid; grid-template-columns: repeat(6, 1fr);
+    }
+    .nav a { padding: 12px 10px; text-align: center; text-decoration: none; color: var(--ink); font-weight: 700; font-size: .84rem; border-right: 1px solid var(--line); }
+    .nav a:last-child { border-right: 0; }
+    .nav a:hover, .nav a:focus-visible { background: var(--cyan-soft); color: var(--cyan); outline: none; }
+    .section { background: var(--paper); border: 1px solid var(--line-strong); margin-top: 30px; box-shadow: var(--shadow); }
+    .section-head { display: grid; grid-template-columns: 120px 1fr; border-bottom: 1px solid var(--line-strong); }
+    .section-num { color: var(--paper); background: var(--ink); font-weight: 900; font-size: 2rem; padding: 18px 22px; }
+    .section-title { padding: 18px 26px; }
+    h2 { font-size: clamp(1.8rem, 3.5vw, 3.2rem); letter-spacing: -.025em; }
+    h3 { font-size: clamp(1.25rem, 2.4vw, 1.65rem); margin-bottom: 12px; }
+    .section-body { padding: clamp(24px, 4vw, 48px); }
+    .lead { font-size: 1.17rem; max-width: 850px; margin: 0 0 30px; }
+    .outcomes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+    .outcome { padding: 20px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .outcome b { display: block; color: var(--cyan); margin-bottom: 5px; }
+    .callout { margin: 28px 0; padding: 20px 24px; background: var(--amber-soft); border: 1px solid var(--amber); }
+    .callout strong { color: var(--amber); }
+    .mental {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;
+      border: 1px solid var(--line-strong); margin: 28px 0;
+    }
+    .mental .node { padding: 17px 12px; text-align: center; position: relative; border-right: 1px solid var(--line); }
+    .mental .node:last-child { border-right: 0; }
+    .mental .node b { display: block; font-size: .9rem; }
+    .mental .node small { display: block; color: var(--muted); margin-top: 4px; }
+    .mental .node::after { content: "→"; position: absolute; right: -10px; top: 38%; z-index: 2; color: var(--amber); font-weight: 900; background: var(--paper); padding: 0 3px; }
+    .mental .node:last-child::after { display: none; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+    .panel { border: 1px solid var(--line); padding: 22px; }
+    .panel p:last-child { margin-bottom: 0; }
+    .label { color: var(--cyan); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 800; }
+    .stat { font-family: Georgia, serif; font-size: 2.25rem; line-height: 1; margin: 10px 0; }
+    .subtle { color: var(--muted); }
+    .arch { margin: 28px 0; display: grid; grid-template-columns: 1fr 1.35fr 1fr; gap: 12px; align-items: stretch; }
+    .arch-block { border: 1px solid var(--line-strong); background: var(--bg); padding: 16px; }
+    .arch-block.sm { background: var(--cyan-soft); border-color: var(--cyan); }
+    .sm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; }
+    .unit { min-height: 38px; padding: 8px 5px; display: grid; place-items: center; text-align: center; font-size: .7rem; font-weight: 800; background: var(--paper); border: 1px solid var(--line); }
+    .unit.tensor { background: var(--amber-soft); border-color: var(--amber); }
+    .unit.cache { grid-column: span 4; background: var(--green-soft); border-color: var(--green); }
+    .compare { width: 100%; border-collapse: collapse; margin: 24px 0; }
+    .compare th, .compare td { padding: 13px 15px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .compare th { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .07em; }
+    .compare td:first-child { font-weight: 800; }
+    .compare tr:last-child td { border-bottom: 0; }
+    code { font-family: "SFMono-Regular", Consolas, monospace; font-size: .9em; }
+    pre { margin: 16px 0 24px; padding: 18px 20px; overflow-wrap: anywhere; white-space: pre-wrap; background: var(--code); color: var(--code-ink); border-left: 4px solid var(--cyan); line-height: 1.55; }
+    pre .cmd { color: #69d6e1; } pre .comment { color: #91a3aa; }
+    .formula { border: 1px solid var(--line-strong); padding: 22px; background: var(--bg); font-family: Georgia, serif; font-size: clamp(1.1rem, 2.4vw, 1.48rem); text-align: center; margin: 20px 0; }
+    .hierarchy { margin: 26px 0; }
+    .tier { display: grid; grid-template-columns: 150px 1fr 110px; align-items: center; gap: 16px; padding: 12px 16px; border: 1px solid var(--line); border-bottom: 0; }
+    .tier:last-child { border-bottom: 1px solid var(--line); }
+    .tier b { color: var(--cyan); }
+    .meter { height: 10px; background: var(--line); position: relative; overflow: hidden; }
+    .meter i { display: block; height: 100%; background: var(--amber); }
+    .tier small { color: var(--muted); text-align: right; }
+    .calculator { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 24px; background: var(--bg); border: 1px solid var(--line-strong); }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { display: grid; gap: 6px; color: var(--muted); font-size: .82rem; font-weight: 700; }
+    input { width: 100%; padding: 10px 12px; color: var(--ink); background: var(--paper); border: 1px solid var(--line-strong); border-radius: 0; }
+    input:focus { outline: 2px solid var(--cyan); outline-offset: 1px; }
+    .calc-result { border-left: 3px solid var(--amber); padding: 10px 20px; }
+    .calc-result .big { font-family: Georgia, serif; font-size: 3.2rem; line-height: 1; color: var(--amber); }
+    .bar { height: 14px; margin: 15px 0; background: var(--line); }
+    .bar span { display: block; height: 100%; width: 0; background: var(--amber); transition: width .2s ease; }
+    .warning { color: var(--red); font-weight: 700; }
+    .cmd-card { border: 1px solid var(--line); padding: 20px; }
+    .cmd-card h3 { font-family: "SFMono-Regular", Consolas, monospace; font-size: 1rem; color: var(--cyan); }
+    .reading { display: grid; grid-template-columns: 165px 1fr; border-top: 1px solid var(--line); }
+    .reading dt, .reading dd { margin: 0; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+    .reading dt { font-weight: 800; border-right: 1px solid var(--line); }
+    .reading dd { color: var(--muted); }
+    .lab { display: grid; grid-template-columns: 74px 1fr; border-top: 1px solid var(--line); padding: 20px 0; }
+    .lab:last-child { border-bottom: 1px solid var(--line); }
+    .lab-num { font-family: Georgia, serif; font-size: 2rem; color: var(--amber); }
+    .lab ul, .panel ul { padding-left: 20px; }
+    .lab li, .panel li { margin: 7px 0; }
+    .check { display: grid; gap: 10px; margin: 18px 0; }
+    .check-item { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+    .check-item::before { content: "□"; color: var(--cyan); font-size: 1.25rem; line-height: 1.1; }
+    details { border-top: 1px solid var(--line); }
+    details:last-child { border-bottom: 1px solid var(--line); }
+    summary { cursor: pointer; padding: 15px 4px; font-weight: 800; color: var(--ink); }
+    details p { color: var(--muted); padding: 0 4px 15px; margin: 0; }
+    .final { background: var(--ink); color: var(--paper); padding: clamp(28px, 5vw, 56px); margin-top: 30px; }
+    .final h2 { color: var(--paper); }
+    .defense { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: #526168; border: 1px solid #526168; margin-top: 26px; }
+    .defense div { background: var(--ink); color: var(--paper); padding: 19px; }
+    .defense b { color: #68d4de; display: block; margin-bottom: 5px; }
+    footer { color: var(--muted); text-align: center; font-size: .84rem; margin-top: 25px; }
+    .toplink { display: inline-block; margin-top: 22px; color: var(--cyan); }
+    @media (max-width: 820px) {
+      .shell { padding: 14px 12px 52px; }
+      .hero { grid-template-columns: 1fr; }
+      .hero-spec { border-left: 0; border-top: 1px solid var(--line-strong); }
+      .hero-spec svg { max-height: 260px; }
+      .nav { grid-template-columns: repeat(3, 1fr); }
+      .nav a { border-bottom: 1px solid var(--line); }
+      .nav a:nth-child(3n) { border-right: 0; }
+      .section-head { grid-template-columns: 72px 1fr; }
+      .section-num { font-size: 1.4rem; padding: 17px 14px; }
+      .section-title { padding: 17px 18px; }
+      .grid-3, .arch, .calculator { grid-template-columns: 1fr; }
+      .mental { grid-template-columns: 1fr; }
+      .mental .node { border-right: 0; border-bottom: 1px solid var(--line); }
+      .mental .node:last-child { border-bottom: 0; }
+      .mental .node::after { content: "↓"; right: 49%; top: auto; bottom: -15px; }
+      .tier { grid-template-columns: 105px 1fr; }
+      .tier small { grid-column: 1 / -1; text-align: left; }
+    }
+    @media (max-width: 600px) {
+      body { background-size: 24px 24px; }
+      .hero-copy { padding: 30px 22px; }
+      .hero-spec { padding: 24px 20px; }
+      .nav { grid-template-columns: repeat(2, 1fr); }
+      .nav a:nth-child(3n) { border-right: 1px solid var(--line); }
+      .nav a:nth-child(2n) { border-right: 0; }
+      .outcomes, .grid-2, .defense { grid-template-columns: 1fr; }
+      .fields { grid-template-columns: 1fr; }
+      .section-body { padding: 22px 18px; }
+      .compare thead { display: none; }
+      .compare, .compare tbody, .compare tr, .compare td { display: block; width: 100%; }
+      .compare tr { padding: 13px 0; border-bottom: 1px solid var(--line); }
+      .compare td { padding: 5px 0; border: 0; }
+      .compare td::before { content: attr(data-label); display: block; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; font-weight: 800; }
+      .reading { grid-template-columns: 1fr; }
+      .reading dt { border-right: 0; border-bottom: 0; padding-bottom: 2px; }
+      .reading dd { padding-top: 2px; }
+      .lab { grid-template-columns: 48px 1fr; }
+      .arch-block { min-width: 0; }
+      .sm-grid { grid-template-columns: repeat(2, 1fr); }
+      .unit.cache { grid-column: span 2; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .bar span { transition: none; } }
+    @media print { body { background: white; } .shell { max-width: none; } .nav { display: none; } .section, .hero { box-shadow: none; break-inside: avoid; } }
+  </style>
+</head>
+<body id="top">
+  <main class="shell">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <div class="stage-tag">Architecture to evidence</div>
+        <h1 id="page-title">GPU Architecture Fundamentals</h1>
+        <p class="dek">Build the hardware mental model behind LLM inference: what executes, what stores, what moves, what stalls—and how to prove it with measurements instead of guessing.</p>
+      </div>
+      <aside class="hero-spec" aria-label="Simplified streaming multiprocessor schematic">
+        <svg viewBox="0 0 420 300" role="img" aria-label="A schematic showing GPU memory feeding L2 cache and streaming multiprocessors containing scalar and tensor execution units">
+          <rect x="8" y="12" width="404" height="52" fill="none" stroke="#697a82" stroke-width="2"/>
+          <text x="210" y="44" text-anchor="middle" fill="#dce8eb" font-size="16" font-family="sans-serif">VRAM / HBM</text>
+          <path d="M210 64V91" stroke="#ff9645" stroke-width="4"/>
+          <rect x="56" y="91" width="308" height="38" fill="#173238" stroke="#42bac7" stroke-width="2"/>
+          <text x="210" y="116" text-anchor="middle" fill="#69d6e1" font-size="14" font-family="sans-serif">L2 CACHE + MEMORY FABRIC</text>
+          <path d="M110 129V156M210 129V156M310 129V156" stroke="#ff9645" stroke-width="3"/>
+          <g fill="none" stroke="#697a82" stroke-width="2">
+            <rect x="31" y="156" width="142" height="126"/><rect x="139" y="156" width="142" height="126"/><rect x="247" y="156" width="142" height="126"/>
+          </g>
+          <g fill="#dce8eb" font-size="13" text-anchor="middle" font-family="sans-serif"><text x="102" y="180">SM 0</text><text x="210" y="180">SM 1</text><text x="318" y="180">SM n</text></g>
+          <g fill="#173238" stroke="#42bac7"><rect x="44" y="193" width="48" height="30"/><rect x="152" y="193" width="48" height="30"/><rect x="260" y="193" width="48" height="30"/></g>
+          <g fill="#3d2819" stroke="#ff9645"><rect x="101" y="193" width="58" height="30"/><rect x="209" y="193" width="58" height="30"/><rect x="317" y="193" width="58" height="30"/></g>
+          <g fill="#9fdde3" font-size="9" text-anchor="middle" font-family="sans-serif"><text x="68" y="212">CUDA</text><text x="176" y="212">CUDA</text><text x="284" y="212">CUDA</text></g>
+          <g fill="#ffd3a9" font-size="9" text-anchor="middle" font-family="sans-serif"><text x="130" y="212">TENSOR</text><text x="238" y="212">TENSOR</text><text x="346" y="212">TENSOR</text></g>
+          <g fill="#202c31"><rect x="44" y="235" width="115" height="28"/><rect x="152" y="235" width="115" height="28"/><rect x="260" y="235" width="115" height="28"/></g>
+          <g fill="#aebdc2" font-size="9" text-anchor="middle" font-family="sans-serif"><text x="101" y="253">REGISTERS + SHARED</text><text x="209" y="253">REGISTERS + SHARED</text><text x="317" y="253">REGISTERS + SHARED</text></g>
+        </svg>
+        <div class="legend"><span><i class="swatch cyan"></i> data locality / scalar-vector execution</span><span><i class="swatch amber"></i> matrix execution / data movement</span><span><i class="swatch gray"></i> scheduling and hierarchy</span></div>
+      </aside>
+    </section>
+
+    <nav class="nav" aria-label="Course sections">
+      <a href="#model">Mental model</a><a href="#compute">Compute</a><a href="#memory">Memory</a><a href="#occupancy">Occupancy</a><a href="#profiling">Profiling</a><a href="#lab">Lab</a>
+    </nav>
+
+    <section class="section" id="model">
+      <div class="section-head"><div class="section-num">01</div><div class="section-title"><h2>A useful GPU mental model</h2></div></div>
+      <div class="section-body">
+        <p class="lead">A GPU is a throughput machine: many lightweight threads execute the same instruction stream over different data. Performance comes from exposing enough parallel work and keeping expensive data movement amortized.</p>
+        <div class="outcomes">
+          <div class="outcome"><b>Explain execution</b>Trace a kernel from grid → block → warp → instruction.</div>
+          <div class="outcome"><b>Separate the engines</b>Know when CUDA cores, tensor cores, and memory pipelines matter.</div>
+          <div class="outcome"><b>Reason in bytes</b>Estimate model residency, KV cache growth, and bandwidth demand.</div>
+          <div class="outcome"><b>Profile honestly</b>Distinguish utilization, occupancy, allocation, traffic, and throttling.</div>
+        </div>
+        <div class="mental" aria-label="GPU work hierarchy">
+          <div class="node"><b>Kernel</b><small>one GPU function</small></div>
+          <div class="node"><b>Grid</b><small>all blocks</small></div>
+          <div class="node"><b>Thread block</b><small>scheduled on one SM</small></div>
+          <div class="node"><b>Warp</b><small>32 threads</small></div>
+          <div class="node"><b>Instruction</b><small>issued to a pipeline</small></div>
+        </div>
+        <div class="grid-3">
+          <article class="panel"><span class="label">Unit of residency</span><div class="stat">Block</div><p class="subtle">A block lands on one streaming multiprocessor (SM) and stays there until completion. Its threads can cooperate through shared memory and barriers.</p></article>
+          <article class="panel"><span class="label">Unit of execution</span><div class="stat">Warp</div><p class="subtle">The scheduler issues work for a warp of 32 threads. Branch divergence serializes paths taken by different lanes.</p></article>
+          <article class="panel"><span class="label">Unit of scale</span><div class="stat">SM</div><p class="subtle">Each SM contains schedulers, registers, caches/shared memory, and several execution pipelines. A GPU has many SMs.</p></article>
+        </div>
+        <div class="callout"><strong>LLM inference translation:</strong> a framework launches many kernels—matrix multiplies, attention, normalization, sampling. End-to-end speed depends on kernel mix, launch overhead, synchronization, data layout, and movement between memory levels—not one headline TFLOPS number.</div>
+      </div>
+    </section>
+
+    <section class="section" id="compute">
+      <div class="section-head"><div class="section-num">02</div><div class="section-title"><h2>CUDA cores, tensor cores, and the SM</h2></div></div>
+      <div class="section-body">
+        <p class="lead">“Core” is overloaded. Treat it as an execution lane or specialized pipeline, not as a CPU core with its own independent control flow.</p>
+        <div class="arch" aria-label="Simplified streaming multiprocessor anatomy">
+          <div class="arch-block"><span class="label">Front end</span><h3>Warp schedulers</h3><p class="subtle">Choose eligible warps and issue instructions. Scoreboards track data dependencies.</p></div>
+          <div class="arch-block sm"><span class="label">Execution back end</span><h3>Inside an SM</h3><div class="sm-grid"><div class="unit">FP32</div><div class="unit">INT</div><div class="unit tensor">Tensor</div><div class="unit">Load / store</div><div class="unit">SFU</div><div class="unit tensor">Tensor</div><div class="unit">FP32</div><div class="unit">INT</div><div class="unit cache">Register file + shared memory / L1</div></div></div>
+          <div class="arch-block"><span class="label">Data path</span><h3>L2 and VRAM</h3><p class="subtle">Serve misses, move cache lines, and connect all SMs to device memory.</p></div>
+        </div>
+        <table class="compare">
+          <thead><tr><th>Engine</th><th>Designed for</th><th>LLM examples</th><th>Key limitation</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Engine">CUDA / scalar-vector pipelines</td><td data-label="Designed for">General arithmetic, comparisons, address calculations, transcendental ops</td><td data-label="LLM examples">LayerNorm, activation, indexing, sampling, reduction support</td><td data-label="Key limitation">Far below tensor-core matrix throughput for dense MMA work</td></tr>
+            <tr><td data-label="Engine">Tensor cores</td><td data-label="Designed for">Fused matrix multiply-accumulate on tiles</td><td data-label="LLM examples">GEMM, QKV projections, MLP layers, batched attention math</td><td data-label="Key limitation">Need supported dtypes, shapes, alignment, layouts, and enough work</td></tr>
+            <tr><td data-label="Engine">Load/store units</td><td data-label="Designed for">Moving values between registers, caches, and memory</td><td data-label="LLM examples">Reading weights, KV cache, activations</td><td data-label="Key limitation">Irregular or uncoalesced access wastes transactions</td></tr>
+            <tr><td data-label="Engine">Special function units</td><td data-label="Designed for">Approximate transcendental operations</td><td data-label="LLM examples">Exponentials in softmax and nonlinear functions</td><td data-label="Key limitation">Specialized throughput; dependencies still matter</td></tr>
+          </tbody>
+        </table>
+        <div class="grid-2">
+          <article class="panel"><h3>SIMT, not “32 CPUs”</h3><p>Threads have their own registers and IDs, but a warp shares instruction issue. If half the warp takes an <code>if</code> branch and half takes <code>else</code>, the warp may execute both paths with inactive lanes masked.</p></article>
+          <article class="panel"><h3>Tensor cores need feeding</h3><p>Peak tensor throughput assumes dense, well-shaped tile work and a data path that can sustain it. Small batches, skinny matrices, dequantization, or repeated VRAM reads can leave tensor cores waiting.</p></article>
+        </div>
+        <div class="formula">Matrix work ≈ 2 × M × N × K floating-point operations</div>
+        <p class="subtle">The factor of two counts one multiply and one add. Hardware metrics may count fused multiply-add as two operations, so match the convention when comparing achieved and peak throughput.</p>
+      </div>
+    </section>
+
+    <section class="section" id="memory">
+      <div class="section-head"><div class="section-num">03</div><div class="section-title"><h2>VRAM, hierarchy, and bandwidth</h2></div></div>
+      <div class="section-body">
+        <p class="lead">Capacity answers “does it fit?” Bandwidth answers “how fast can bytes arrive?” Latency answers “how long until a request returns?” Caches and parallelism connect the three.</p>
+        <div class="hierarchy" aria-label="GPU memory hierarchy from fastest and smallest to slowest and largest">
+          <div class="tier"><b>Registers</b><div class="meter"><i style="width:100%"></i></div><small>per thread · fastest</small></div>
+          <div class="tier"><b>Shared / L1</b><div class="meter"><i style="width:82%"></i></div><small>per SM · managed/local</small></div>
+          <div class="tier"><b>L2 cache</b><div class="meter"><i style="width:55%"></i></div><small>device-wide</small></div>
+          <div class="tier"><b>VRAM / HBM</b><div class="meter"><i style="width:26%"></i></div><small>large · high latency</small></div>
+          <div class="tier"><b>Host / network</b><div class="meter"><i style="width:8%"></i></div><small>off-device</small></div>
+        </div>
+        <div class="grid-2">
+          <article class="panel"><span class="label">Capacity budget</span><h3>What occupies VRAM?</h3><ul><li>Model weights and quantization metadata</li><li>KV cache, growing with active tokens and sequences</li><li>Temporary activations and attention workspaces</li><li>CUDA context, kernels, graph captures, communication buffers</li><li>Allocator-reserved memory and fragmentation</li></ul></article>
+          <article class="panel"><span class="label">Traffic budget</span><h3>What crosses memory?</h3><ul><li>Weights reread when they do not remain in cache</li><li>KV pages read and appended during decode</li><li>Intermediate tensors between unfused kernels</li><li>Collectives over NVLink / PCIe / network in multi-GPU runs</li><li>Host-to-device inputs and device-to-host outputs</li></ul></article>
+        </div>
+        <div class="formula">Ideal bandwidth time = bytes transferred ÷ sustained bandwidth</div>
+        <p>Example: moving 60 GB through a path sustaining 2.4 TB/s has a lower bound of <strong>25 ms</strong>. That is not the application latency—launch, compute, cache behavior, synchronization, and competing traffic add to it.</p>
+        <div class="callout"><strong>Roofline shortcut:</strong> arithmetic intensity = operations ÷ bytes moved. A kernel with intensity below the machine’s peak-FLOPS/peak-bandwidth ratio is likely bandwidth-limited; above it, compute may dominate. Use sustained measurements, not only spec-sheet peaks.</div>
+        <h3>Inference phases stress hardware differently</h3>
+        <table class="compare">
+          <thead><tr><th>Phase</th><th>Shape</th><th>Typical pressure</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Phase">Prefill</td><td data-label="Shape">Many prompt tokens in parallel</td><td data-label="Typical pressure">Often more compute-friendly</td><td data-label="Why">Larger matrix dimensions expose reuse and tensor-core work</td></tr>
+            <tr><td data-label="Phase">Decode</td><td data-label="Shape">Usually one new token per sequence per step</td><td data-label="Typical pressure">Often weight/KV bandwidth and launch overhead</td><td data-label="Why">Small M dimension reduces reuse; weights and growing KV state still move</td></tr>
+            <tr><td data-label="Phase">Large continuous batch</td><td data-label="Shape">Many sequences mixed across phases</td><td data-label="Typical pressure">Compute, capacity, scheduler trade-offs</td><td data-label="Why">Batching raises utilization but consumes KV memory and may affect latency</td></tr>
+          </tbody>
+        </table>
+        <div class="grid-3">
+          <article class="panel"><span class="label">Coalescing</span><p>Adjacent lanes accessing adjacent addresses lets hardware combine requests into fewer memory transactions.</p></article>
+          <article class="panel"><span class="label">Reuse</span><p>A tiled kernel loads data once into cache/shared memory and reuses it across many operations.</p></article>
+          <article class="panel"><span class="label">Fusion</span><p>Keeping intermediates in registers or shared memory avoids round trips to VRAM between kernels.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="occupancy">
+      <div class="section-head"><div class="section-num">04</div><div class="section-title"><h2>SM occupancy without folklore</h2></div></div>
+      <div class="section-body">
+        <p class="lead">Occupancy is the ratio of resident warps to the architecture’s maximum resident warps per SM. It describes available concurrency—not useful work, tensor-core activity, or achieved performance.</p>
+        <div class="formula">Theoretical occupancy = active warps per SM ÷ maximum warps per SM</div>
+        <div class="calculator" aria-label="Simplified occupancy calculator">
+          <div>
+            <h3>Simplified calculator</h3>
+            <p class="subtle">This teaching model considers only threads and blocks. Real occupancy can be lower due to registers, shared memory, architectural block limits, and compiler allocation granularity.</p>
+            <div class="fields">
+              <label>Threads per block<input id="tpb" type="number" min="32" step="32" value="256" /></label>
+              <label>Max threads / SM<input id="mts" type="number" min="32" step="32" value="2048" /></label>
+              <label>Max blocks / SM<input id="mbs" type="number" min="1" step="1" value="16" /></label>
+              <label>Max warps / SM<input id="mws" type="number" min="1" step="1" value="64" /></label>
+            </div>
+          </div>
+          <div class="calc-result" aria-live="polite">
+            <span class="label">Thread-limited estimate</span>
+            <div class="big"><span id="occ">100</span>%</div>
+            <div class="bar" aria-hidden="true"><span id="occbar"></span></div>
+            <p id="calcText">8 blocks × 8 warps = 64 active warps per SM.</p>
+            <p class="warning" id="calcWarn"></p>
+          </div>
+        </div>
+        <div class="grid-2" style="margin-top:24px">
+          <article class="panel"><h3>What limits residency?</h3><ul><li>Threads per block</li><li>Registers used per thread</li><li>Shared memory used per block</li><li>Maximum blocks and warps supported per SM</li><li>Register/shared-memory allocation granularity</li></ul></article>
+          <article class="panel"><h3>Why 100% is not the goal</h3><ul><li>A compute-bound kernel may already saturate pipelines</li><li>Extra occupancy cannot fix serial dependencies</li><li>Reducing registers can introduce spills to local memory</li><li>Larger tiles may use more resources but improve reuse</li><li>Best performance is empirical, not a percentage target</li></ul></article>
+        </div>
+        <div class="callout"><strong>Do not confuse:</strong> <em>occupancy</em> is resident warp capacity; <em>GPU utilization</em> from <code>nvidia-smi</code> is the sampled fraction of time one or more kernels were executing; <em>SM throughput/utilization</em> is a profiler metric describing pipeline activity. These are related, not interchangeable.</div>
+      </div>
+    </section>
+
+    <section class="section" id="profiling">
+      <div class="section-head"><div class="section-num">05</div><div class="section-title"><h2><code>nvidia-smi</code>: the fast triage layer</h2></div></div>
+      <div class="section-body">
+        <p class="lead"><code>nvidia-smi</code> is excellent for fleet health and coarse process telemetry. It is not a kernel profiler. Use it to form a hypothesis, then move to Nsight Systems or Nsight Compute when you need causality.</p>
+        <div class="grid-2">
+          <article class="cmd-card"><h3>Snapshot</h3><pre><span class="cmd">nvidia-smi</span></pre><p class="subtle">See driver/runtime compatibility, temperature, power, aggregate utilization, memory allocation, and active processes.</p></article>
+          <article class="cmd-card"><h3>Machine-readable loop</h3><pre><span class="cmd">nvidia-smi</span> --query-gpu=timestamp,index,name,utilization.gpu,utilization.memory,memory.used,memory.total,power.draw,clocks.sm,temperature.gpu --format=csv -l 1</pre><p class="subtle">Collect one-second samples you can diff or chart. Keep units in CSV unless a parser requires otherwise.</p></article>
+          <article class="cmd-card"><h3>Device monitor</h3><pre><span class="cmd">nvidia-smi dmon</span> -s pucvmet</pre><p class="subtle">Stream power, utilization, clocks, violations, memory, ECC, and thermal groups when supported.</p></article>
+          <article class="cmd-card"><h3>Process monitor</h3><pre><span class="cmd">nvidia-smi pmon</span> -s um -c 20</pre><p class="subtle">Sample per-process utilization and memory. Available fields vary by device, driver, and platform.</p></article>
+        </div>
+        <h3>Read the common fields correctly</h3>
+        <dl class="reading">
+          <dt>GPU-Util</dt><dd>Percentage of the recent sample interval during which one or more kernels executed. It does not say how full the SM pipelines were.</dd>
+          <dt>Memory-Usage</dt><dd>Allocated device memory, not current memory bandwidth and not necessarily live tensors. Framework allocators often reserve pools.</dd>
+          <dt>Memory-Util</dt><dd>Recent time with device-memory read/write activity, where supported. It is not bytes/sec and can hide transaction efficiency.</dd>
+          <dt>Power</dt><dd>Board power draw versus limit. Reaching the limit alongside reduced clocks can indicate power throttling.</dd>
+          <dt>Perf / clocks</dt><dd>Performance state and current clocks. Interpret with workload phase, thermal state, and power policy.</dd>
+          <dt>Temp</dt><dd>Device temperature. High temperature is only meaningful with clock/throttle evidence and the device’s limits.</dd>
+          <dt>MIG</dt><dd>Multi-Instance GPU partitioning state. A process may see a partition rather than the full physical GPU.</dd>
+        </dl>
+        <h3>A disciplined escalation path</h3>
+        <div class="mental" aria-label="Profiling escalation path">
+          <div class="node"><b>Measure service</b><small>latency, throughput, queue</small></div>
+          <div class="node"><b>Check health</b><small>nvidia-smi</small></div>
+          <div class="node"><b>Trace timeline</b><small>Nsight Systems</small></div>
+          <div class="node"><b>Inspect kernels</b><small>Nsight Compute</small></div>
+          <div class="node"><b>Change one thing</b><small>remeasure</small></div>
+        </div>
+        <div class="grid-3">
+          <article class="panel"><span class="label">Pattern</span><h3>Low util, idle gaps</h3><p>Suspect CPU scheduling, launch overhead, synchronization, data loading, or too little batch work. Confirm with a timeline.</p></article>
+          <article class="panel"><span class="label">Pattern</span><h3>High util, low throughput</h3><p>Could be bandwidth-bound, inefficient kernels, throttling, contention, or simply heavy work. Utilization alone cannot choose.</p></article>
+          <article class="panel"><span class="label">Pattern</span><h3>OOM with “free” memory</h3><p>Suspect fragmentation, another process, peak workspace, graph capture, or a mismatch between allocator and driver views.</p></article>
+        </div>
+        <div class="callout"><strong>Sampling warning:</strong> a one-second poll can miss millisecond-scale kernels and bursty gaps. Match sampling resolution to the phenomenon, and align GPU traces with request timestamps.</div>
+      </div>
+    </section>
+
+    <section class="section" id="lab">
+      <div class="section-head"><div class="section-num">06</div><div class="section-title"><h2>Hands-on lab: prove the bottleneck</h2></div></div>
+      <div class="section-body">
+        <p class="lead">Use any CUDA-capable machine with permission to profile. The lab works with a small PyTorch script or an existing inference service. Record the exact GPU, driver, framework, dtype, tensor shapes, and batch size.</p>
+        <div class="lab"><div class="lab-num">A</div><div><h3>Baseline the device</h3><pre><span class="cmd">nvidia-smi</span> --query-gpu=index,name,driver_version,memory.total,power.limit --format=csv
+<span class="cmd">nvidia-smi</span> --query-compute-apps=pid,process_name,used_memory --format=csv</pre><ul><li>Confirm the intended GPU is visible.</li><li>Identify competing processes before interpreting results.</li><li>Save the output beside your benchmark metadata.</li></ul></div></div>
+        <div class="lab"><div class="lab-num">B</div><div><h3>Create two contrasting workloads</h3><p>Run a large matrix multiply and a repeated elementwise operation over a large tensor. Warm up first, synchronize around timing, and repeat enough times to characterize variance.</p><pre><span class="comment"># Pseudocode — adapt sizes to fit your device safely</span>
+for _ in range(warmup): matmul(A, B)
+synchronize()
+start = timer()
+for _ in range(iters): matmul(A, B)
+synchronize()
+elapsed = timer() - start</pre><ul><li>Predict which workload should use tensor cores.</li><li>Predict which should show stronger memory pressure.</li><li>Do not allocate tensors so large that the desktop or shared machine becomes unstable.</li></ul></div></div>
+        <div class="lab"><div class="lab-num">C</div><div><h3>Observe at service and device levels</h3><pre><span class="cmd">nvidia-smi</span> --query-gpu=timestamp,utilization.gpu,utilization.memory,memory.used,power.draw,clocks.sm --format=csv -l 1</pre><ul><li>Capture request latency/throughput at the same time.</li><li>Explain any mismatch between GPU-Util and service throughput.</li><li>Repeat with a larger batch or tensor dimension; change only one variable.</li></ul></div></div>
+        <div class="lab"><div class="lab-num">D</div><div><h3>Test an occupancy hypothesis</h3><p>If you have a custom CUDA kernel, compare resource usage and achieved occupancy across block sizes. If you do not, use profiler-reported launch configuration on a framework kernel and explain why you cannot tune it directly.</p><div class="check"><div class="check-item">Record threads/block, registers/thread, shared memory/block.</div><div class="check-item">Compute the likely residency limit from each resource.</div><div class="check-item">Compare theoretical occupancy with achieved occupancy and throughput.</div><div class="check-item">Reject any change that raises occupancy but slows the kernel.</div></div></div></div>
+        <h3>Write the result as an engineering claim</h3>
+        <pre>Under [GPU / software / shape / dtype], workload X achieved [service metric].
+Evidence: [timeline or kernel metric], while [counter-evidence checked].
+The dominant limit appears to be [compute / memory / launch / synchronization / capacity].
+Changing [one variable] moved [metric] by [measured amount].
+Remaining uncertainty: [what this experiment did not isolate].</pre>
+        <h3>Knowledge check</h3>
+        <details><summary>1. Why can GPU-Util be 100% while a kernel uses only a fraction of peak FLOPS?</summary><p>GPU-Util says that at least one kernel was active during the sampling interval. The active kernel may be bandwidth-bound, dependency-bound, poorly vectorized, too small, or using non-tensor pipelines. It does not quantify pipeline saturation.</p></details>
+        <details><summary>2. Why can lowering register use make a kernel slower?</summary><p>It may increase theoretical occupancy but force values to spill into local memory, add instructions, or prevent a more efficient tile. More resident warps do not guarantee more useful throughput.</p></details>
+        <details><summary>3. Why is decode often more bandwidth-sensitive than prefill?</summary><p>Decode commonly performs small matrix-vector-like work per sequence while rereading weights and accessing KV state. Prefill has more tokens in parallel and often offers better matrix reuse and tensor-core efficiency.</p></details>
+        <details><summary>4. Does 40 GB “memory used” mean 40 GB was read this second?</summary><p>No. It is allocated or reserved capacity. Traffic requires bandwidth counters or profiler metrics; allocation can remain constant while traffic varies widely.</p></details>
+        <details><summary>5. What should you do after <code>nvidia-smi</code> shows low utilization?</summary><p>Correlate with service metrics, then inspect a timeline for CPU gaps, data copies, synchronization, communication, or tiny kernels. Low utilization identifies unused time, not its cause.</p></details>
+      </div>
+    </section>
+
+    <section class="final" aria-labelledby="defense-title">
+      <h2 id="defense-title">Whiteboard defense</h2>
+      <p>Before you call this stage complete, explain these from a blank board—without leaning on brand names or a profiler screenshot.</p>
+      <div class="defense">
+        <div><b>Why tensor cores?</b>When does tiled matrix hardware win, and what prevents it from reaching peak?</div>
+        <div><b>Why hierarchy?</b>Why are registers, shared memory, cache, and VRAM all necessary?</div>
+        <div><b>What can go wrong?</b>Divergence, uncoalesced access, spills, small kernels, fragmentation, throttling, contention.</div>
+        <div><b>How would you prove it?</b>Service benchmark → device health → timeline → kernel counters → controlled rerun.</div>
+      </div>
+      <a class="toplink" href="#top">Back to top ↑</a>
+    </section>
+    <footer>Stage 2 · Systems path for LLM inference engineering</footer>
+  </main>
+  <script>
+    (() => {
+      const ids = ['tpb','mts','mbs','mws'];
+      const inputs = ids.map(id => document.getElementById(id));
+      function positive(el, fallback) {
+        const v = Number(el.value);
+        return Number.isFinite(v) && v > 0 ? v : fallback;
+      }
+      function update() {
+        const tpb = positive(inputs[0], 256);
+        const maxThreads = positive(inputs[1], 2048);
+        const maxBlocks = positive(inputs[2], 16);
+        const maxWarps = positive(inputs[3], 64);
+        const warpsPerBlock = Math.ceil(tpb / 32);
+        const blocksByThreads = Math.floor(maxThreads / tpb);
+        const activeBlocks = Math.max(0, Math.min(blocksByThreads, maxBlocks));
+        const activeWarps = Math.min(activeBlocks * warpsPerBlock, maxWarps);
+        const occ = Math.max(0, Math.min(100, (activeWarps / maxWarps) * 100));
+        document.getElementById('occ').textContent = occ.toFixed(occ % 1 ? 1 : 0);
+        document.getElementById('occbar').style.width = occ + '%';
+        document.getElementById('calcText').textContent = `${activeBlocks} blocks × ${warpsPerBlock} warps = ${activeWarps} active warps per SM.`;
+        const invalidWarp = tpb % 32 !== 0;
+        const tooLarge = tpb > maxThreads;
+        document.getElementById('calcWarn').textContent = tooLarge ? 'No block fits under this thread limit.' : (invalidWarp ? 'Partial final warp: inactive lanes still consume warp capacity.' : '');
+      }
+      inputs.forEach(input => input.addEventListener('input', update));
+      update();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:," />
+  <title>Stage 3: Transformer Inference Anatomy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      color-scheme:light dark;
+      --bg:#f3f2ed;--panel:#fff;--panel2:#e9e8e1;--ink:#171915;--muted:#5c6158;
+      --line:#c8c9bf;--grid:#dedfd6;--orange:#d9562b;--orange2:#9e3215;--cyan:#087f88;
+      --green:#26754a;--yellow:#9b6812;--shadow:0 12px 40px rgba(28,31,25,.09);
+    }
+    @media(prefers-color-scheme:dark){:root{
+      --bg:#101310;--panel:#171b17;--panel2:#20251f;--ink:#f2f0e8;--muted:#aeb5aa;
+      --line:#3c443b;--grid:#2a3029;--orange:#ff7548;--orange2:#ff9a75;--cyan:#58cbd1;
+      --green:#67c58f;--yellow:#e0ad4f;--shadow:0 16px 50px rgba(0,0,0,.28);
+    }}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",sans-serif;line-height:1.58;overflow-x:hidden}
+    body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.34;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to bottom,black,transparent 76%);z-index:-1}
+    a{color:var(--cyan);text-underline-offset:3px}
+    button,input{font:inherit}
+    .shell{max-width:1280px;margin:auto;display:grid;grid-template-columns:230px minmax(0,1fr);gap:48px;padding:28px 30px 90px}
+    .rail{position:sticky;top:20px;align-self:start;height:calc(100vh - 40px);display:flex;flex-direction:column;padding:18px 0}
+    .stage{font:600 12px/1 "IBM Plex Mono";letter-spacing:.12em;color:var(--orange);margin-bottom:28px}
+    .rail nav{display:grid;gap:4px}
+    .rail a{color:var(--muted);text-decoration:none;font-size:14px;padding:8px 10px;border-left:2px solid transparent;transition:.2s}
+    .rail a.active{color:var(--ink);border-color:var(--orange);background:color-mix(in srgb,var(--panel) 78%,transparent)}
+    .rail .readout{margin-top:auto;border-top:1px solid var(--line);padding:16px 10px 0;font:12px/1.6 "IBM Plex Mono";color:var(--muted)}
+    main{min-width:0}
+    .hero{min-height:540px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);gap:40px;align-items:center;padding:52px 0 72px;border-bottom:1px solid var(--line)}
+    .hero h1{font-size:clamp(42px,6vw,82px);line-height:.96;letter-spacing:-.055em;margin:0 0 26px;max-width:740px}
+    .hero h1 span{display:block;color:var(--orange)}
+    .hero .lede{font-size:clamp(18px,2vw,23px);max-width:660px;color:var(--muted);margin:0 0 30px}
+    .meta{display:flex;gap:8px;flex-wrap:wrap}
+    .tag{font:500 12px "IBM Plex Mono";border:1px solid var(--line);padding:7px 10px;background:var(--panel)}
+    .hero-diagram{background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);padding:18px;position:relative}
+    .hero-diagram::before{content:"INFERENCE TRACE";position:absolute;top:-11px;left:16px;background:var(--orange);color:#fff;padding:4px 8px;font:600 10px "IBM Plex Mono";letter-spacing:.1em}
+    .trace{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:12px}
+    .token{aspect-ratio:1;border:1px solid var(--line);display:grid;place-items:center;font:600 12px "IBM Plex Mono";background:var(--panel2);position:relative}
+    .token.prompt{background:color-mix(in srgb,var(--cyan) 18%,var(--panel));border-color:var(--cyan)}
+    .token.new{background:color-mix(in srgb,var(--orange) 18%,var(--panel));border-color:var(--orange)}
+    .flowline{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin:18px 0 8px;font:500 11px "IBM Plex Mono";color:var(--muted)}
+    .flowline i{height:1px;background:var(--line);display:block}
+    .blockstack{display:grid;gap:8px}
+    .block{display:grid;grid-template-columns:32px 1fr auto;align-items:center;gap:10px;padding:11px;border:1px solid var(--line);background:var(--bg);font:12px "IBM Plex Mono"}
+    .block b{color:var(--orange)}
+    .pulse{width:9px;height:9px;background:var(--green);border-radius:50%;box-shadow:0 0 0 5px color-mix(in srgb,var(--green) 14%,transparent);animation:pulse 1.8s infinite}
+    @keyframes pulse{50%{box-shadow:0 0 0 10px transparent}}
+    section{padding:76px 0;border-bottom:1px solid var(--line);scroll-margin-top:20px}
+    .section-head{display:grid;grid-template-columns:120px 1fr;gap:20px;align-items:start;margin-bottom:38px}
+    .index{font:600 13px "IBM Plex Mono";color:var(--orange);padding-top:8px}
+    h2{font-size:clamp(32px,4vw,52px);line-height:1.05;letter-spacing:-.035em;margin:0 0 12px}
+    .section-head p{font-size:18px;color:var(--muted);max-width:740px;margin:0}
+    h3{font-size:23px;line-height:1.2;margin:0 0 12px;letter-spacing:-.015em}
+    h4{font-size:15px;margin:0 0 8px;font-family:"IBM Plex Mono";color:var(--orange)}
+    p{margin:0 0 16px}
+    .objectives{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+    .objective{background:var(--panel);padding:22px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start}
+    .objective .num{font:600 12px "IBM Plex Mono";color:var(--orange);border:1px solid var(--line);padding:4px 6px}
+    .objective strong{display:block;margin-bottom:4px}.objective small{color:var(--muted);font-size:14px}
+    .phase-switch{display:flex;gap:8px;margin-bottom:18px}
+    .phase-switch button{border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:10px 16px;cursor:pointer;font:600 13px "IBM Plex Mono"}
+    .phase-switch button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+    .phase-panel{display:none}.phase-panel.active{display:block}
+    .phase-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:18px}
+    .schematic,.note,.formula,.calc,.quiz,.compare{background:var(--panel);border:1px solid var(--line)}
+    .schematic{padding:24px;min-height:330px}
+    .schematic-title{display:flex;justify-content:space-between;gap:15px;align-items:baseline;margin-bottom:28px}
+    .schematic-title span{font:12px "IBM Plex Mono";color:var(--muted)}
+    .tokens-row{display:grid;grid-template-columns:repeat(6,minmax(38px,1fr));gap:8px;align-items:end}
+    .tok-col{display:grid;gap:8px;text-align:center;font:11px "IBM Plex Mono";color:var(--muted)}
+    .tok-box{height:56px;border:1px solid var(--cyan);background:color-mix(in srgb,var(--cyan) 14%,var(--panel));display:grid;place-items:center;color:var(--ink)}
+    .tok-col:last-child .tok-box{border-color:var(--orange);background:color-mix(in srgb,var(--orange) 14%,var(--panel))}
+    .arrows{height:48px;position:relative;margin:18px 0}.arrows::before{content:"";position:absolute;left:4%;right:4%;top:23px;border-top:1px dashed var(--line)}
+    .arrowlabel{position:absolute;left:50%;transform:translateX(-50%);top:5px;background:var(--panel);padding:0 10px;font:11px "IBM Plex Mono";color:var(--muted)}
+    .ops{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.op{padding:13px 9px;border:1px solid var(--line);text-align:center;font:12px "IBM Plex Mono"}.op b{display:block;color:var(--orange);font-size:14px}
+    .side-notes{display:grid;gap:12px}.note{padding:18px}.note strong{font:600 12px "IBM Plex Mono";color:var(--orange);display:block;margin-bottom:6px}.note p{font-size:14px;color:var(--muted);margin:0}
+    .formula{padding:24px;margin:18px 0}.eq{font:600 clamp(17px,2.2vw,27px) "IBM Plex Mono";overflow-wrap:anywhere;color:var(--ink)}.eq .accent{color:var(--orange)}.formula p{color:var(--muted);font-size:14px;margin:12px 0 0}
+    .compare{display:grid;grid-template-columns:1fr 1fr;margin-top:22px}.compare>div{padding:24px}.compare>div+div{border-left:1px solid var(--line)}
+    .metric{font:700 32px "IBM Plex Mono";letter-spacing:-.04em}.metric.orange{color:var(--orange)}.metric.cyan{color:var(--cyan)}
+    .compare ul,.bullets{padding-left:18px;margin:12px 0 0}.compare li,.bullets li{margin:8px 0;color:var(--muted)}
+    .anatomy{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:20px}
+    .cache-viz{border:1px solid var(--line);background:var(--panel);padding:22px}
+    .layer-row{display:grid;grid-template-columns:46px repeat(8,1fr);gap:4px;margin:5px 0;align-items:center}.layer-row label{font:10px "IBM Plex Mono";color:var(--muted)}.cell{height:18px;background:color-mix(in srgb,var(--cyan) 25%,var(--panel2));border:1px solid color-mix(in srgb,var(--cyan) 48%,var(--line))}.cell.hot{background:color-mix(in srgb,var(--orange) 28%,var(--panel2));border-color:var(--orange)}
+    .legend{display:flex;gap:16px;flex-wrap:wrap;font:11px "IBM Plex Mono";color:var(--muted);margin-top:14px}.legend i{display:inline-block;width:10px;height:10px;background:var(--cyan);margin-right:5px}.legend i.hot{background:var(--orange)}
+    .calc{padding:24px}.calc h3{margin-bottom:5px}.calc .sub{color:var(--muted);font-size:14px;margin-bottom:22px}.controls{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.control label{font:500 11px "IBM Plex Mono";color:var(--muted);display:block;margin-bottom:6px}.control input,.control select{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:9px 10px;border-radius:0}.result{margin-top:20px;border-top:1px solid var(--line);padding-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px}.result small{display:block;color:var(--muted);font:11px "IBM Plex Mono"}.result strong{font:700 25px "IBM Plex Mono";color:var(--orange)}
+    .memory-stack{margin-top:28px;height:48px;display:flex;border:1px solid var(--line);background:var(--panel2)}.memory-stack span{display:grid;place-items:center;min-width:2px;transition:width .25s}.memory-stack .w{background:var(--ink);color:var(--bg);font:11px "IBM Plex Mono"}.memory-stack .k{background:var(--orange);color:#fff;font:11px "IBM Plex Mono"}.memory-stack .f{flex:1;font:11px "IBM Plex Mono";color:var(--muted)}
+    .math-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.math-card{background:var(--panel);border:1px solid var(--line);padding:23px}.math-card .symbol{font:600 12px "IBM Plex Mono";color:var(--cyan)}
+    .roofline{margin-top:22px;background:var(--panel);border:1px solid var(--line);padding:22px}.roofchart{height:280px;position:relative;border-left:2px solid var(--ink);border-bottom:2px solid var(--ink);margin:30px 18px 36px 46px}.roofchart .diag{position:absolute;left:0;bottom:0;width:64%;height:2px;background:var(--orange);transform-origin:left;transform:rotate(-26deg)}.roofchart .roof{position:absolute;left:57%;right:0;top:23%;height:2px;background:var(--orange)}.roofchart .ridge{position:absolute;left:57%;top:23%;bottom:0;border-left:1px dashed var(--line)}.roofchart .dot{position:absolute;width:14px;height:14px;border-radius:50%;transform:translate(-50%,50%);border:3px solid var(--panel);box-shadow:0 0 0 1px var(--ink)}.roofchart .dot.prefill{left:76%;bottom:77%;background:var(--cyan)}.roofchart .dot.decode{left:19%;bottom:23%;background:var(--orange)}.roofchart .dlabel{position:absolute;font:11px "IBM Plex Mono"}.roofchart .lp{left:77%;top:10%}.roofchart .ld{left:21%;bottom:18%}.axis-x{position:absolute;left:50%;bottom:-34px;transform:translateX(-50%);font:11px "IBM Plex Mono";white-space:nowrap}.axis-y{position:absolute;left:-90px;top:44%;transform:rotate(-90deg);font:11px "IBM Plex Mono";white-space:nowrap}.bound{position:absolute;font:10px "IBM Plex Mono";color:var(--orange)}.bound.mem{left:13%;bottom:30%;transform:rotate(-26deg)}.bound.compute{right:4%;top:16%}
+    .takeaway{display:grid;grid-template-columns:40px 1fr;gap:14px;padding:18px;background:color-mix(in srgb,var(--orange) 10%,var(--panel));border:1px solid color-mix(in srgb,var(--orange) 48%,var(--line));margin-top:20px}.takeaway b{font:600 18px "IBM Plex Mono";color:var(--orange)}.takeaway p{margin:0}
+    .lab-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.lab{background:var(--panel);border:1px solid var(--line);padding:22px}.lab .labnum{font:600 11px "IBM Plex Mono";color:var(--orange);margin-bottom:28px}.lab p{color:var(--muted);font-size:14px}.lab code{display:block;background:var(--bg);border:1px solid var(--line);padding:10px;font:12px/1.5 "IBM Plex Mono";white-space:pre-wrap;margin-top:14px;color:var(--ink)}
+    .quiz{padding:28px}.q{padding:22px 0;border-top:1px solid var(--line)}.q:first-of-type{border-top:0}.q p{font-weight:600}.answers{display:grid;grid-template-columns:1fr 1fr;gap:8px}.answers button{background:var(--bg);color:var(--ink);border:1px solid var(--line);text-align:left;padding:12px;cursor:pointer}.answers button:hover{border-color:var(--cyan)}.answers button.correct{border-color:var(--green);background:color-mix(in srgb,var(--green) 13%,var(--panel))}.answers button.wrong{border-color:var(--orange);background:color-mix(in srgb,var(--orange) 10%,var(--panel))}.feedback{min-height:25px;color:var(--muted);font-size:14px;margin-top:8px}
+    .references{display:grid;gap:12px}.ref{display:grid;grid-template-columns:42px 1fr;gap:15px;padding:16px 0;border-top:1px solid var(--line)}.ref:first-child{border-top:0}.ref .rnum{font:600 12px "IBM Plex Mono";color:var(--orange)}.ref a{font-weight:600}.ref p{color:var(--muted);font-size:14px;margin:4px 0 0}
+    .final{padding-bottom:40px;border:0}.final-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:20px}.checklist{background:var(--ink);color:var(--bg);padding:28px}.checklist h3{color:var(--bg)}.checklist ul{list-style:none;padding:0;margin:20px 0 0}.checklist li{padding:11px 0;border-top:1px solid color-mix(in srgb,var(--bg) 22%,transparent);display:grid;grid-template-columns:22px 1fr;gap:8px}.checklist li::before{content:"□";color:var(--orange)}
+    .next{border:1px solid var(--line);background:var(--panel);padding:28px}.next .arrow{font-size:34px;color:var(--orange)}
+    @media(max-width:900px){.shell{grid-template-columns:1fr;padding:0 20px 70px}.rail{display:none}.hero{grid-template-columns:1fr;padding-top:48px}.hero-diagram{max-width:650px}.section-head{grid-template-columns:1fr;gap:4px}.phase-grid,.anatomy,.final-grid{grid-template-columns:1fr}.lab-grid{grid-template-columns:1fr}.math-grid{grid-template-columns:1fr}}
+    @media(max-width:600px){.shell{padding-left:15px;padding-right:15px}.hero{min-height:auto;gap:28px;padding-bottom:52px}.hero h1{font-size:43px}.trace{grid-template-columns:repeat(4,1fr)}section{padding:54px 0}.objectives,.compare{grid-template-columns:1fr}.compare>div+div{border-left:0;border-top:1px solid var(--line)}.tokens-row{grid-template-columns:repeat(3,1fr)}.ops{grid-template-columns:1fr}.controls,.result,.answers{grid-template-columns:1fr}.phase-switch{display:grid;grid-template-columns:1fr 1fr}.roofchart{height:230px;margin-left:42px}.layer-row{grid-template-columns:38px repeat(8,1fr);gap:2px}.cell{height:15px}.memory-stack span{font-size:9px}.section-head p{font-size:16px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.pulse{animation:none}*{transition:none!important}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail" aria-label="Course navigation">
+      <div class="stage">STAGE 03 / 12</div>
+      <nav>
+        <a href="#objectives">Objectives</a><a href="#phases">Two phases</a><a href="#cache">KV cache</a><a href="#attention">Attention math</a><a href="#intensity">Arithmetic intensity</a><a href="#labs">Labs</a><a href="#check">Knowledge check</a><a href="#references">References</a>
+      </nav>
+      <div class="readout">SYSTEMS TRACK<br>~45 MIN THEORY<br>~60 MIN LAB</div>
+    </aside>
+
+    <main>
+      <header class="hero">
+        <div>
+          <div class="stage">STAGE 03 · SYSTEMS FOUNDATIONS</div>
+          <h1>Transformer <span>inference anatomy</span></h1>
+          <p class="lede">Follow one request from prompt ingestion to token-by-token generation—and learn to predict where time and memory go before opening a profiler.</p>
+          <div class="meta"><span class="tag">PREFILL ↔ DECODE</span><span class="tag">KV CACHE</span><span class="tag">ROOFLINE MODEL</span></div>
+        </div>
+        <div class="hero-diagram" role="img" aria-label="Prompt tokens enter a transformer stack and one generated token exits">
+          <div class="trace">
+            <div class="token prompt">The</div><div class="token prompt">GPU</div><div class="token prompt">reads</div><div class="token prompt">the</div><div class="token prompt">KV</div><div class="token prompt">cache</div><div class="token new">→</div><div class="token new">fast</div>
+          </div>
+          <div class="flowline"><i></i><span>32× TRANSFORMER BLOCKS</span><i></i></div>
+          <div class="blockstack">
+            <div class="block"><b>01</b><span>GQA + SwiGLU sublayers · append K/V</span><i class="pulse"></i></div>
+            <div class="block"><b>02</b><span>GQA + SwiGLU sublayers · append K/V</span><i class="pulse"></i></div>
+            <div class="block"><b>··</b><span>repeat the complete transformer block</span><i class="pulse"></i></div>
+            <div class="block"><b>32</b><span>GQA + SwiGLU sublayers · append K/V</span><i class="pulse"></i></div>
+            <div class="block"><b>OUT</b><span>final norm → LM head → sample token</span><i class="pulse"></i></div>
+          </div>
+        </div>
+      </header>
+
+      <section id="objectives">
+        <div class="section-head"><div class="index">00 — TARGET</div><div><h2>What you should be able to defend</h2><p>Not just vocabulary. By the end, you should be able to derive the bottleneck from shapes, precision, and hardware balance.</p></div></div>
+        <div class="objectives">
+          <div class="objective"><span class="num">01</span><div><strong>Separate the phases</strong><small>Explain why prefill and decode run the same model but stress hardware differently.</small></div></div>
+          <div class="objective"><span class="num">02</span><div><strong>Budget KV memory</strong><small>Compute bytes per token, sequence, and batch for MHA, GQA, or MQA.</small></div></div>
+          <div class="objective"><span class="num">03</span><div><strong>Count attention work</strong><small>Distinguish quadratic prefill work from linear-per-step decode work.</small></div></div>
+          <div class="objective"><span class="num">04</span><div><strong>Use a roofline</strong><small>Estimate compute-bound vs bandwidth-bound behavior using arithmetic intensity.</small></div></div>
+        </div>
+      </section>
+
+      <section id="phases">
+        <div class="section-head"><div class="index">01 — PHASES</div><div><h2>One model, two execution regimes</h2><p>The boundary is simple: prefill processes the known prompt in parallel; decode produces one new position per sequence per iteration.</p></div></div>
+        <div class="phase-switch" role="tablist" aria-label="Inference phase">
+          <button role="tab" aria-selected="true" aria-controls="prefill-panel" id="prefill-tab">PREFILL</button>
+          <button role="tab" aria-selected="false" aria-controls="decode-panel" id="decode-tab">DECODE</button>
+        </div>
+        <div class="phase-panel active" id="prefill-panel" role="tabpanel" aria-labelledby="prefill-tab">
+          <div class="phase-grid">
+            <div class="schematic">
+              <div class="schematic-title"><h3>Prompt ingestion</h3><span>[B, S] → [B, S, D]</span></div>
+              <div class="tokens-row"><div class="tok-col"><div class="tok-box">t₀</div><span>pos 0</span></div><div class="tok-col"><div class="tok-box">t₁</div><span>pos 1</span></div><div class="tok-col"><div class="tok-box">t₂</div><span>pos 2</span></div><div class="tok-col"><div class="tok-box">t₃</div><span>pos 3</span></div><div class="tok-col"><div class="tok-box">t₄</div><span>pos 4</span></div><div class="tok-col"><div class="tok-box">t₅</div><span>pos 5</span></div></div>
+              <div class="arrows"><span class="arrowlabel">parallel positions; causal mask</span></div>
+              <div class="ops"><div class="op"><b>GEMM</b>large token dimension</div><div class="op"><b>S × S</b>causal attention</div><div class="op"><b>WRITE</b>all prompt K/V</div></div>
+            </div>
+            <div class="side-notes"><div class="note"><strong>PARALLELISM</strong><p>All prompt positions are available, so linear layers become matrix–matrix multiplications with useful reuse.</p></div><div class="note"><strong>ATTENTION</strong><p>Causal attention still computes many query–key interactions. Optimized kernels tile them rather than store the full score matrix.</p></div><div class="note"><strong>LATENCY NAME</strong><p>Prefill dominates <em>time to first token</em> (TTFT), especially for long prompts.</p></div></div>
+          </div>
+        </div>
+        <div class="phase-panel" id="decode-panel" role="tabpanel" aria-labelledby="decode-tab">
+          <div class="phase-grid">
+            <div class="schematic">
+              <div class="schematic-title"><h3>Autoregressive loop</h3><span>[B, 1] → sample → append</span></div>
+              <div class="tokens-row"><div class="tok-col"><div class="tok-box">K₀V₀</div><span>cached</span></div><div class="tok-col"><div class="tok-box">K₁V₁</div><span>cached</span></div><div class="tok-col"><div class="tok-box">K₂V₂</div><span>cached</span></div><div class="tok-col"><div class="tok-box">K₃V₃</div><span>cached</span></div><div class="tok-col"><div class="tok-box">K₄V₄</div><span>cached</span></div><div class="tok-col"><div class="tok-box">+ K₅V₅</div><span>append</span></div></div>
+              <div class="arrows"><span class="arrowlabel">one query scans prior K/V</span></div>
+              <div class="ops"><div class="op"><b>GEMV</b>tiny token dimension</div><div class="op"><b>1 × S</b>attention row</div><div class="op"><b>READ</b>weights + KV</div></div>
+            </div>
+            <div class="side-notes"><div class="note"><strong>SEQUENTIAL</strong><p>Token <em>t+1</em> depends on token <em>t</em>. A single request exposes little parallel work across positions.</p></div><div class="note"><strong>MEMORY TRAFFIC</strong><p>Weights are streamed for each step; attention reads an ever-growing KV history. Reuse improves when requests are batched.</p></div><div class="note"><strong>LATENCY NAME</strong><p>Decode controls <em>time per output token</em> (TPOT) and inter-token latency.</p></div></div>
+          </div>
+        </div>
+        <div class="compare"><div><div class="metric cyan">Prefill</div><ul><li>Many tokens × one forward pass</li><li>Often compute-heavy GEMMs</li><li>Attention work grows roughly with S²</li><li>Builds the initial KV cache</li></ul></div><div><div class="metric orange">Decode</div><ul><li>One token × many iterations</li><li>Often bandwidth-heavy GEMVs</li><li>Attention work per step grows with S</li><li>Appends one K/V pair per layer</li></ul></div></div>
+      </section>
+
+      <section id="cache">
+        <div class="section-head"><div class="index">02 — STATE</div><div><h2>The KV cache is the model’s working set</h2><p>Causal decoding would repeatedly recompute keys and values for every prior token without caching. The cache trades that compute for persistent device memory.</p></div></div>
+        <div class="formula"><div class="eq">KV bytes = <span class="accent">B · L · S · 2 · H<sub>kv</sub> · d<sub>h</sub> · p</span></div><p>B batch · L layers · S cached tokens · 2 for keys and values · H<sub>kv</sub> KV heads · d<sub>h</sub> head dimension · p bytes per element.</p></div>
+        <div class="anatomy">
+          <div class="cache-viz">
+            <h3>Growth is linear</h3><p style="color:var(--muted);font-size:14px">Each new token contributes one K vector and one V vector in every layer.</p>
+            <div aria-label="KV cache blocks growing across layers">
+              <div class="layer-row"><label>L01</label><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell hot"></i></div>
+              <div class="layer-row"><label>L02</label><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell hot"></i></div>
+              <div class="layer-row"><label>L03</label><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell hot"></i></div>
+              <div class="layer-row"><label>···</label><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell hot"></i></div>
+              <div class="layer-row"><label>L32</label><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell hot"></i></div>
+            </div>
+            <div class="legend"><span><i></i>cached token</span><span><i class="hot"></i>new append</span></div>
+            <div class="takeaway"><b>!</b><p><strong>GQA changes the coefficient, not the growth law.</strong> Sharing K/V heads makes each token cheaper, but memory still grows linearly with sequence count, context length, and layers.</p></div>
+          </div>
+          <div class="calc">
+            <h3>KV budget calculator</h3><p class="sub">Defaults approximate an 8B-class GQA model in FP16/BF16.</p>
+            <div class="controls">
+              <div class="control"><label for="layers">LAYERS (L)</label><input id="layers" type="number" min="1" max="200" value="32"></div>
+              <div class="control"><label for="seq">TOKENS / SEQUENCE (S)</label><input id="seq" type="number" min="1" max="1000000" value="8192"></div>
+              <div class="control"><label for="batch">SEQUENCES (B)</label><input id="batch" type="number" min="1" max="10000" value="1"></div>
+              <div class="control"><label for="kvheads">KV HEADS (Hkv)</label><input id="kvheads" type="number" min="1" max="256" value="8"></div>
+              <div class="control"><label for="headdim">HEAD DIM (dh)</label><input id="headdim" type="number" min="1" max="512" value="128"></div>
+              <div class="control"><label for="precision">CACHE PRECISION</label><select id="precision"><option value="2">FP16 / BF16 · 2 B</option><option value="1">FP8 / INT8 · 1 B</option><option value="4">FP32 · 4 B</option></select></div>
+            </div>
+            <div class="result"><div><small>PER TOKEN / SEQUENCE</small><strong id="perToken">128 KiB</strong></div><div><small>TOTAL KV CACHE</small><strong id="kvTotal">1.00 GiB</strong></div></div>
+          </div>
+        </div>
+        <div class="memory-stack" aria-label="Illustrative GPU memory budget"><span class="w" style="width:62%">weights</span><span class="k" id="kvBar" style="width:7%">KV</span><span class="f">workspace + free</span></div>
+        <p style="font:11px 'IBM Plex Mono';color:var(--muted);margin-top:8px">ILLUSTRATIVE 16 GiB DEVICE · 8B MODEL AT 2 BYTES / WEIGHT · excludes runtime overhead</p>
+      </section>
+
+      <section id="attention">
+        <div class="section-head"><div class="index">03 — ATTENTION</div><div><h2>Count work from tensor shapes</h2><p>Big-O hides the constants that determine deployment. Start with Q, K, V shapes and count multiply-adds and bytes moved.</p></div></div>
+        <div class="math-grid">
+          <div class="math-card"><div class="symbol">PREFILL / ONE LAYER</div><h3>All queries see a causal prefix</h3><div class="formula"><div class="eq">QKᵀ + PV ≈ <span class="accent">4 · S² · D</span> FLOPs</div></div><p>For H<sub>q</sub> query heads of width d<sub>h</sub>, D = H<sub>q</sub>d<sub>h</sub>. The triangular causal mask roughly halves valid score pairs, but kernels and counting conventions vary—state your assumption.</p></div>
+          <div class="math-card"><div class="symbol">DECODE / ONE LAYER / ONE TOKEN</div><h3>One query scans the history</h3><div class="formula"><div class="eq">QKᵀ + PV ≈ <span class="accent">4 · S · D</span> FLOPs</div></div><p>The step is linear in current context length S. Across an N-token generation, the summed attention work grows with the area under that line: roughly proportional to N·S<sub>prompt</sub> + N²/2.</p></div>
+        </div>
+        <div class="takeaway"><b>≠</b><p><strong>Compute complexity is not memory allocation.</strong> FlashAttention avoids materializing the full S×S score matrix in HBM, but it does not remove the attention FLOPs. KV cache allocation stays O(S); attention work in prefill stays O(S²).</p></div>
+        <div class="formula"><div class="eq">decode KV bytes read ≈ <span class="accent">2 · S · H<sub>kv</sub> · d<sub>h</sub> · p</span> per layer, per sequence, per step</div><p>Kernel implementations, cache layout, quantization metadata, and data reuse change realized traffic. This is a first-order lower-bound-style model, not a profiler replacement.</p></div>
+      </section>
+
+      <section id="intensity">
+        <div class="section-head"><div class="index">04 — ROOFLINE</div><div><h2>Arithmetic intensity predicts the bottleneck</h2><p>Arithmetic intensity (AI) is useful work per byte moved from the limiting memory level. Compare it with the hardware’s compute-to-bandwidth ratio.</p></div></div>
+        <div class="formula"><div class="eq">AI = FLOPs / bytes &nbsp;&nbsp;·&nbsp;&nbsp; attainable FLOP/s ≤ min(<span class="accent">peak compute</span>, AI × <span class="accent">bandwidth</span>)</div></div>
+        <div class="roofline">
+          <h3>Roofline mental model</h3>
+          <div class="roofchart" role="img" aria-label="Roofline chart showing decode in memory-bound region and prefill near compute-bound region"><i class="diag"></i><i class="roof"></i><i class="ridge"></i><i class="dot prefill"></i><i class="dot decode"></i><span class="dlabel lp">PREFILL<br>batched GEMM</span><span class="dlabel ld">DECODE<br>small batch</span><span class="bound mem">bandwidth ceiling</span><span class="bound compute">compute ceiling</span><span class="axis-x">ARITHMETIC INTENSITY → FLOP / BYTE</span><span class="axis-y">ATTAINABLE PERFORMANCE → FLOP / S</span></div>
+        </div>
+        <div class="math-grid" style="margin-top:18px">
+          <div class="math-card"><div class="symbol">DECODE ATTENTION ESTIMATE</div><h3>GQA can lift AI</h3><div class="formula"><div class="eq">AI ≈ <span class="accent">2H<sub>q</sub> / (H<sub>kv</sub>p)</span></div></div><p>Using attention FLOPs 4SH<sub>q</sub>d<sub>h</sub> and KV bytes 2SH<sub>kv</sub>d<sub>h</sub>p. With 32 query heads, 8 KV heads, and 2-byte values: ≈4 FLOP/byte before other traffic.</p></div>
+          <div class="math-card"><div class="symbol">WEIGHT STREAMING ESTIMATE</div><h3>Batching creates reuse</h3><div class="formula"><div class="eq">AI<sub>linear</sub> ≈ <span class="accent">2B / p</span></div></div><p>If a weight is fetched once and reused across B independent token rows, effective AI rises with batch. Real kernels also move activations and may not achieve perfect reuse.</p></div>
+        </div>
+        <div class="takeaway"><b>→</b><p><strong>Optimization follows the regime.</strong> Compute-bound prefill rewards efficient tensor-core GEMMs and tiling. Bandwidth-bound decode rewards weight/KV quantization, larger effective batches, cache locality, and fewer bytes per token.</p></div>
+      </section>
+
+      <section id="labs">
+        <div class="section-head"><div class="index">05 — PRACTICE</div><div><h2>Three labs to make it concrete</h2><p>Use any open decoder model and profiler available to you. Record shapes and assumptions; exact numbers matter less than reconciling the model with measurement.</p></div></div>
+        <div class="lab-grid">
+          <article class="lab"><div class="labnum">LAB 01 · PHASE SPLIT</div><h3>Trace TTFT vs TPOT</h3><p>Run the same model with fixed output length and prompt lengths 128, 512, 2048, 8192. Plot prefill time separately from median decode-step time.</p><code>prompt_tokens, output_tokens
+prefill_ms, decode_ms/token
+prefill_tokens/s, decode_tokens/s</code></article>
+          <article class="lab"><div class="labnum">LAB 02 · MEMORY MODEL</div><h3>Predict KV allocation</h3><p>Read L, H<sub>kv</sub>, d<sub>h</sub>, and cache dtype from config/runtime. Predict bytes, then compare against memory snapshots before and after cache allocation.</p><code>pred = B*L*S*2*Hkv*dh*bytes
+error = (measured-pred)/pred</code></article>
+          <article class="lab"><div class="labnum">LAB 03 · BATCH SWEEP</div><h3>Find the knee</h3><p>Sweep active decode sequences while holding context length stable. Track throughput, TPOT, power, and memory. Identify where throughput gains flatten.</p><code>B = 1, 2, 4, 8, 16, 32…
+report: tok/s, p50/p99 TPOT,
+HBM GB/s, SM utilization</code></article>
+        </div>
+      </section>
+
+      <section id="check">
+        <div class="section-head"><div class="index">06 — CHECK</div><div><h2>Can you reason without the profiler?</h2><p>Choose an answer. Explanations appear immediately; nothing is saved.</p></div></div>
+        <div class="quiz">
+          <div class="q" data-answer="b"><p>1. A request’s prompt grows from 2K to 8K tokens. What happens to its KV cache?</p><div class="answers"><button data-choice="a">Roughly 16× larger</button><button data-choice="b">Roughly 4× larger</button><button data-choice="c">Unchanged after prefill</button><button data-choice="d">Roughly 2× larger</button></div><div class="feedback"></div></div>
+          <div class="q" data-answer="c"><p>2. Why is low-batch decode commonly bandwidth-bound?</p><div class="answers"><button data-choice="a">Softmax requires no compute</button><button data-choice="b">The KV cache is quadratic in S</button><button data-choice="c">Few token rows reuse a large weight stream</button><button data-choice="d">Tensor cores cannot run during inference</button></div><div class="feedback"></div></div>
+          <div class="q" data-answer="a"><p>3. What does FlashAttention primarily change?</p><div class="answers"><button data-choice="a">IO pattern and intermediate materialization</button><button data-choice="b">The causal model’s exact output</button><button data-choice="c">KV cache growth from O(S) to O(1)</button><button data-choice="d">Attention FLOPs from O(S²) to O(S)</button></div><div class="feedback"></div></div>
+          <div class="q" data-answer="d"><p>4. Going from 32 KV heads to 8, with all else fixed, changes KV capacity per sequence by:</p><div class="answers"><button data-choice="a">4× larger</button><button data-choice="b">2× smaller</button><button data-choice="c">No change</button><button data-choice="d">4× smaller</button></div><div class="feedback"></div></div>
+        </div>
+      </section>
+
+      <section id="references">
+        <div class="section-head"><div class="index">07 — SOURCES</div><div><h2>Read the originals</h2><p>Use these to go deeper on IO-aware attention, dynamic cache management, and the worked architecture example.</p></div></div>
+        <div class="references">
+          <div class="ref"><div class="rnum">[1]</div><div><a href="https://arxiv.org/abs/2205.14135?context=cs" target="_blank" rel="noreferrer">FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness</a><p>Dao et al. · exact attention through SRAM-aware tiling and reduced HBM traffic.</p></div></div>
+          <div class="ref"><div class="rnum">[2]</div><div><a href="http://arxiv.org/abs/2309.06180" target="_blank" rel="noreferrer">Efficient Memory Management for Large Language Model Serving with PagedAttention</a><p>Kwon et al. · virtual-memory-inspired management for dynamically growing KV caches.</p></div></div>
+          <div class="ref"><div class="rnum">[3]</div><div><a href="https://github.com/tlcdv/the_consciousness_ai/blob/HEAD/tech%20documentation/llama3%20Herd%20of%20Models/llama3_herd.md" target="_blank" rel="noreferrer">Llama 3 architecture summary</a><p>Architecture table used for the 8B-class example: 32 layers, 32 query heads, 8 KV heads, model dimension 4096.</p></div></div>
+        </div>
+      </section>
+
+      <section class="final">
+        <div class="final-grid">
+          <div class="checklist"><h3>Stage 3 exit criteria</h3><ul><li>I can explain prefill vs decode from tensor shapes.</li><li>I can calculate KV bytes without a lookup table.</li><li>I can separate attention FLOPs from attention-memory allocation.</li><li>I can place a workload qualitatively on a roofline.</li><li>I can name the first optimization to try for each regime.</li></ul></div>
+          <div class="next"><div class="stage">NEXT UP · STAGE 04</div><div class="arrow">↗</div><h3>GPU execution fundamentals</h3><p style="color:var(--muted)">Warps, memory hierarchy, occupancy, tensor cores, and why a mathematically equivalent kernel can be dramatically faster.</p></div>
+        </div>
+      </section>
+    </main>
+  </div>
+<script>
+  const tabs=[...document.querySelectorAll('.phase-switch button')];
+  tabs.forEach(btn=>btn.addEventListener('click',()=>{
+    tabs.forEach(b=>b.setAttribute('aria-selected','false'));
+    document.querySelectorAll('.phase-panel').forEach(p=>p.classList.remove('active'));
+    btn.setAttribute('aria-selected','true');
+    document.getElementById(btn.getAttribute('aria-controls')).classList.add('active');
+  }));
+
+  const fmtBytes=n=>{
+    const units=['B','KiB','MiB','GiB','TiB'];let i=0;
+    while(n>=1024&&i<units.length-1){n/=1024;i++}
+    return `${n>=100?n.toFixed(0):n>=10?n.toFixed(1):n.toFixed(2)} ${units[i]}`;
+  };
+  const inputs=['layers','seq','batch','kvheads','headdim','precision'].map(id=>document.getElementById(id));
+  function updateKV(){
+    const [L,S,B,H,D,P]=inputs.map(x=>Math.max(0,Number(x.value)||0));
+    const per=L*2*H*D*P,total=per*S*B;
+    document.getElementById('perToken').textContent=fmtBytes(per);
+    document.getElementById('kvTotal').textContent=fmtBytes(total);
+    const gib=total/1073741824; const kvPct=Math.min(36,Math.max(2,gib/16*100));
+    const bar=document.getElementById('kvBar');bar.style.width=kvPct+'%';bar.textContent=kvPct>5?'KV':'';
+  }
+  inputs.forEach(i=>i.addEventListener('input',updateKV));updateKV();
+
+  const explanations={
+    '1':{ok:'Correct. KV storage is linear in sequence length: 8K / 2K = 4×.',bad:'KV storage is O(S), so quadrupling context quadruples cache bytes.'},
+    '2':{ok:'Correct. At low batch, each step does little compute per byte of weights and KV moved.',bad:'The key issue is low arithmetic intensity: large tensors move for very few token rows.'},
+    '3':{ok:'Correct. FlashAttention is exact attention with a better tiled IO schedule.',bad:'FlashAttention reduces HBM traffic and avoids materializing the full score matrix; it does not change exact attention or its asymptotic FLOP count.'},
+    '4':{ok:'Correct. KV bytes scale linearly with Hkv, so 32 → 8 is a 4× reduction.',bad:'Use the cache formula: Hkv is a direct multiplier. Dividing head count by four divides cache bytes by four.'}
+  };
+  document.querySelectorAll('.q').forEach((q,idx)=>q.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{
+    q.querySelectorAll('button').forEach(b=>b.classList.remove('correct','wrong'));
+    const good=btn.dataset.choice===q.dataset.answer;btn.classList.add(good?'correct':'wrong');
+    q.querySelector('.feedback').textContent=explanations[String(idx+1)][good?'ok':'bad'];
+  })));
+
+  const links=[...document.querySelectorAll('.rail nav a')];
+  const sections=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const observer=new IntersectionObserver(entries=>entries.forEach(e=>{
+    if(e.isIntersecting){links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id));}
+  }),{rootMargin:'-25% 0px -65% 0px'});
+  sections.forEach(s=>observer.observe(s));
+</script>
+</body>
+</html>
