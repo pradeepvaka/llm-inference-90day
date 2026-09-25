@@ -14,7 +14,7 @@ Course index (Google Doc): https://docs.google.com/document/d/1nnmtDFpOQDeUurNA9
 | 4 | Serving Engines | https://muse.ai/s/stage-4-serving-engines-tk66rxcexqr8j | stage-04-serving-engines.html |
 | 5 | KV Cache Optimization | https://muse.ai/s/stage-5-kv-cache-optimization-xfxh66xt3xfjx0x0h | stage-05-kv-cache-optimization.html |
 | 6 | Quantization and Compression | https://muse.ai/s/stage-6-quantization-and-compression-xwxe67lhe4xf6g | stage-06-quantization-and-compression.html |
-| 7 | Speculative Decoding and Parallelism | coming Sept 24 | — |
+| 7 | Speculative Decoding and Parallelism | pending share approval | stage-07-speculative-decoding-and-parallelism.html |
 | 8 | Kernel-Level Optimization | coming Sept 25 | — |
 | 9 | Distributed Inference | coming Sept 26 | — |
 | 10 | Autoscaling and Economics | coming Sept 27 | — |

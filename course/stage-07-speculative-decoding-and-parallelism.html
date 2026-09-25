@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#0b1820" />
+  <link rel="icon" href="data:," />
+  <title>Stage 7: Speculative Decoding and Parallelism</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f7f5;
+      --surface: #ffffff;
+      --surface-2: #e9efec;
+      --ink: #102229;
+      --muted: #53656a;
+      --line: #cbd6d2;
+      --accent: #dc5b34;
+      --accent-soft: #ffe5dc;
+      --cool: #087f8c;
+      --cool-soft: #d9f1f1;
+      --dark: #0b1820;
+      --code: #0d2028;
+      --code-ink: #d9f2ed;
+      --good: #177a54;
+      --warn: #a74a16;
+      --bad: #a83b3b;
+      --shadow: 0 16px 44px rgba(16,34,41,.09);
+      --radius: 18px;
+      --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      --sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #081218;
+        --surface: #0f2028;
+        --surface-2: #162b33;
+        --ink: #edf6f3;
+        --muted: #a8b9b8;
+        --line: #2c4248;
+        --accent: #ff7952;
+        --accent-soft: #43271f;
+        --cool: #60cbd0;
+        --cool-soft: #12363a;
+        --dark: #050d11;
+        --code: #050d11;
+        --code-ink: #dcf5f1;
+        --good: #6bd3a5;
+        --warn: #f5ad75;
+        --bad: #fa9292;
+        --shadow: 0 20px 55px rgba(0,0,0,.28);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.65; }
+    button, input { font: inherit; }
+    a { color: inherit; }
+    .progress-rail { position: fixed; inset: 0 0 auto; height: 4px; z-index: 50; background: transparent; }
+    .progress-bar { height: 100%; width: 0; background: var(--accent); }
+    .layout { width: min(1240px, calc(100% - 36px)); margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 820px); gap: 54px; justify-content: center; }
+    .toc { position: sticky; top: 30px; height: max-content; padding-top: 38px; }
+    .toc .stage { font-family: var(--mono); color: var(--accent); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 22px; }
+    .toc a { display: block; text-decoration: none; color: var(--muted); border-left: 2px solid var(--line); padding: 7px 0 7px 16px; font-size: 13px; line-height: 1.35; transition: .2s ease; }
+    .toc a:hover, .toc a.active { color: var(--ink); border-left-color: var(--accent); }
+    main { min-width: 0; padding-bottom: 100px; }
+    .hero { min-height: 78vh; display: flex; flex-direction: column; justify-content: center; padding: 78px 0 50px; }
+    .hero-top { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .stage-chip { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--accent); padding: 6px 10px; border: 1px solid currentColor; border-radius: 999px; }
+    .duration { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    h1 { margin: 0; max-width: 760px; font-size: clamp(42px, 7vw, 82px); line-height: .99; letter-spacing: -.055em; font-weight: 800; }
+    .hero .dek { max-width: 680px; margin: 27px 0 34px; color: var(--muted); font-size: clamp(18px, 2.3vw, 23px); line-height: 1.5; }
+    .hero .dek strong { color: var(--ink); }
+    .objective-strip { display: grid; grid-template-columns: repeat(3,1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .objective { padding: 20px 20px 20px 0; }
+    .objective + .objective { padding-left: 20px; border-left: 1px solid var(--line); }
+    .objective b { font-family: var(--mono); color: var(--accent); display: block; font-size: 12px; margin-bottom: 6px; }
+    .objective span { font-size: 14px; line-height: 1.4; display: block; }
+    section { scroll-margin-top: 24px; padding: 76px 0 12px; }
+    .section-num { font-family: var(--mono); font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+    h2 { margin: 10px 0 18px; font-size: clamp(30px, 4.4vw, 48px); letter-spacing: -.04em; line-height: 1.1; }
+    h3 { margin: 38px 0 12px; font-size: 22px; letter-spacing: -.02em; line-height: 1.25; }
+    p { margin: 0 0 17px; }
+    .lead { font-size: 19px; color: var(--muted); max-width: 730px; }
+    .callout { margin: 28px 0; padding: 22px 24px; background: var(--accent-soft); border-radius: 4px 18px 18px 4px; }
+    .callout b { color: var(--accent); }
+    .callout.cool { background: var(--cool-soft); }
+    .callout.cool b { color: var(--cool); }
+    .concept-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 34px 0; }
+    .concept { padding: 28px; background: var(--surface); box-shadow: var(--shadow); border-radius: var(--radius); }
+    .concept .symbol { width: 48px; height: 48px; display: grid; place-items: center; margin-bottom: 24px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font: 600 20px var(--mono); }
+    .concept:nth-child(2) .symbol { background: var(--cool-soft); color: var(--cool); }
+    .concept h3 { margin: 0 0 8px; }
+    .concept p { color: var(--muted); font-size: 15px; }
+    .equation { overflow-wrap: anywhere; margin: 24px 0; padding: 22px; background: var(--dark); color: #e6f5f1; border-radius: 12px; font-family: var(--mono); font-size: clamp(14px,2vw,17px); line-height: 1.7; }
+    .equation .accent { color: #ff8b68; }
+    .equation .cool { color: #71d9dc; }
+    .diagram { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; margin: 28px 0; overflow: hidden; }
+    .diagram-title { display:flex; justify-content:space-between; gap:16px; align-items: baseline; margin-bottom: 20px; }
+    .diagram-title strong { font-size: 16px; }
+    .diagram-title span { color:var(--muted); font:12px var(--mono); }
+    .token-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .token { min-width: 45px; padding:9px 12px; text-align:center; background:var(--surface-2); border-radius:8px; font:600 13px var(--mono); }
+    .token.accept { background:var(--cool-soft); color:var(--cool); }
+    .token.reject { background:var(--accent-soft); color:var(--accent); text-decoration:line-through; }
+    .arrow { color:var(--muted); font-family:var(--mono); }
+    .diagram-note { margin-top:16px; color:var(--muted); font-size:13px; }
+    .stepper { margin: 34px 0; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .stepper-head { padding:22px 24px; display:flex; justify-content:space-between; align-items:center; gap:20px; border-bottom:1px solid var(--line); }
+    .stepper-head strong { font-size:17px; }
+    .stepper-counter { font:12px var(--mono); color:var(--muted); }
+    .stepper-body { padding:28px 24px; min-height:220px; }
+    .stepper-body h3 { margin:0 0 10px; }
+    .stepper-body p { color:var(--muted); }
+    .stepper-controls { display:flex; gap:10px; padding:18px 24px; background:var(--surface-2); }
+    .btn { border:0; border-radius:9px; padding:10px 16px; cursor:pointer; color:white; background:var(--accent); font-weight:700; }
+    .btn.secondary { color:var(--ink); background:var(--surface); border:1px solid var(--line); }
+    .btn:disabled { opacity:.4; cursor:not-allowed; }
+    .tree-wrap { overflow-x:auto; padding-bottom:5px; }
+    .tree { min-width:600px; height:290px; position:relative; }
+    .tree svg { position:absolute; inset:0; width:100%; height:100%; }
+    .node { position:absolute; z-index:2; min-width:60px; transform:translate(-50%,-50%); padding:8px 10px; text-align:center; background:var(--surface); border:2px solid var(--line); border-radius:9px; font:12px var(--mono); }
+    .node.root { border-color:var(--ink); font-weight:600; }
+    .node.chosen { border-color:var(--cool); color:var(--cool); background:var(--cool-soft); }
+    .node.pruned { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); opacity:.72; }
+    table { width:100%; border-collapse:collapse; margin:28px 0; font-size:14px; }
+    th { text-align:left; font:600 12px var(--mono); color:var(--muted); letter-spacing:.04em; text-transform:uppercase; border-bottom:2px solid var(--ink); padding:12px 10px; }
+    td { padding:14px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+    td:first-child { font-weight:700; }
+    .good { color:var(--good); font-weight:700; }
+    .warn { color:var(--warn); font-weight:700; }
+    .parallel-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:28px 0; }
+    .parallel-card { border:1px solid var(--line); background:var(--surface); padding:24px; border-radius:var(--radius); }
+    .parallel-card h3 { margin:0 0 4px; }
+    .tag { display:inline-block; font:600 11px var(--mono); padding:4px 8px; border-radius:999px; background:var(--surface-2); color:var(--muted); margin-bottom:20px; }
+    .gpu-row { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:20px 0; }
+    .gpu { min-height:76px; border:1px solid var(--line); padding:8px 4px; display:grid; place-items:center; text-align:center; font:11px var(--mono); background:var(--surface-2); border-radius:6px; }
+    .gpu b { display:block; color:var(--accent); }
+    .parallel-card:nth-child(2) .gpu b { color:var(--cool); }
+    .mini-list { margin:18px 0 0; padding:0; list-style:none; }
+    .mini-list li { padding:8px 0 8px 20px; position:relative; border-top:1px solid var(--line); font-size:14px; }
+    .mini-list li::before { content:"→"; position:absolute; left:0; color:var(--accent); }
+    .lab { margin:32px 0; background:var(--dark); color:#eaf5f2; border-radius:var(--radius); overflow:hidden; }
+    .lab-head { padding:22px 24px; border-bottom:1px solid #29404a; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+    .lab-head h3 { margin:0; color:white; }
+    .lab-head span { font:12px var(--mono); color:#91aaa9; }
+    .lab-body { padding:24px; }
+    .controls { display:grid; grid-template-columns:repeat(2,1fr); gap:20px 28px; }
+    .control label { display:flex; justify-content:space-between; font:12px var(--mono); color:#afc4c1; margin-bottom:9px; }
+    .control output { color:#ff8b68; font-weight:600; }
+    input[type="range"] { width:100%; accent-color:var(--accent); }
+    .result { margin-top:24px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .metric { background:#132832; padding:16px; border-radius:8px; }
+    .metric b { display:block; font-size:22px; color:white; }
+    .metric span { font:11px var(--mono); color:#9db3b1; text-transform:uppercase; }
+    .recommendation { grid-column:1/-1; background:#19343a; border-left:3px solid #65d1d0; padding:17px; }
+    .recommendation b { color:#71d9dc; }
+    pre { margin:24px 0; padding:24px; overflow:auto; color:var(--code-ink); background:var(--code); border-radius:12px; font:13px/1.75 var(--mono); tab-size:2; }
+    code { font-family:var(--mono); }
+    .inline-code { font: .9em var(--mono); background:var(--surface-2); padding:2px 6px; border-radius:4px; }
+    .code-wrap { position:relative; }
+    .copy { position:absolute; top:10px; right:10px; border:1px solid #34505a; background:#142a34; color:#cfe5df; padding:6px 9px; border-radius:6px; font:11px var(--mono); cursor:pointer; }
+    .checklist { list-style:none; margin:24px 0; padding:0; counter-reset:item; }
+    .checklist li { counter-increment:item; display:grid; grid-template-columns:42px 1fr; gap:14px; padding:16px 0; border-bottom:1px solid var(--line); }
+    .checklist li::before { content:counter(item, decimal-leading-zero); font:600 12px var(--mono); color:var(--accent); padding-top:4px; }
+    .quiz { margin-top:30px; }
+    .question { padding:24px 0; border-top:1px solid var(--line); }
+    .question h3 { margin:0 0 14px; font-size:17px; }
+    .answers { display:grid; gap:8px; }
+    .answer { text-align:left; width:100%; padding:13px 15px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); cursor:pointer; }
+    .answer:hover { border-color:var(--cool); }
+    .answer.correct { border-color:var(--good); background:color-mix(in srgb, var(--good) 12%, var(--surface)); }
+    .answer.wrong { border-color:var(--bad); background:color-mix(in srgb, var(--bad) 11%, var(--surface)); }
+    .feedback { display:none; margin:10px 0 0; color:var(--muted); font-size:14px; }
+    .feedback.show { display:block; }
+    .completion { margin-top:42px; padding:28px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); }
+    .scoreline { display:flex; justify-content:space-between; align-items:end; gap:20px; }
+    .scoreline strong { font-size:28px; }
+    .scoreline span { color:var(--muted); font:12px var(--mono); }
+    .glossary { display:grid; grid-template-columns:1fr 1fr; gap:0 28px; margin-top:24px; }
+    .term { padding:16px 0; border-top:1px solid var(--line); }
+    .term dt { font:600 13px var(--mono); color:var(--cool); }
+    .term dd { margin:5px 0 0; color:var(--muted); font-size:14px; }
+    .footer-note { margin-top:72px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; display:flex; justify-content:space-between; gap:18px; }
+    @media (max-width: 900px) {
+      .layout { display:block; width:min(100% - 32px, 820px); }
+      .toc { display:none; }
+      .hero { min-height:auto; padding-top:78px; }
+    }
+    @media (max-width: 640px) {
+      .layout { width:min(100% - 24px, 820px); }
+      .hero { padding-top:58px; }
+      h1 { font-size:43px; }
+      .objective-strip, .concept-pair, .parallel-grid, .controls, .result, .glossary { grid-template-columns:1fr; }
+      .objective { padding:15px 0; }
+      .objective + .objective { padding-left:0; border-left:0; border-top:1px solid var(--line); }
+      section { padding-top:60px; }
+      .concept, .parallel-card { padding:21px; }
+      .gpu-row { grid-template-columns:repeat(2,1fr); }
+      .recommendation { grid-column:auto; }
+      .diagram, .stepper-body { padding:20px 16px; }
+      .stepper-head, .stepper-controls { padding-left:16px; padding-right:16px; }
+      .stepper-controls .btn { flex:1; }
+      table, tbody, tr, td { display:block; }
+      thead { display:none; }
+      tr { padding:15px 0; border-bottom:1px solid var(--line); }
+      td { display:grid; grid-template-columns:100px minmax(0,1fr); gap:12px; border:0; padding:5px 0; overflow-wrap:anywhere; }
+      td::before { content:attr(data-label); font:600 10px var(--mono); text-transform:uppercase; color:var(--muted); }
+      .tree-wrap { overflow:visible; }
+      .tree { min-width:0; height:250px; }
+      .tree .node { min-width:42px; max-width:58px; padding:5px 4px; font-size:9px; }
+      .code-wrap { overflow:hidden; }
+      pre { white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; font-size:11px; }
+      .footer-note { display:block; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } * { transition:none !important; } }
+  </style>
+</head>
+<body>
+  <div class="progress-rail" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+  <div class="layout">
+    <aside class="toc" aria-label="Lesson navigation">
+      <div class="stage">Stage 07 / 12</div>
+      <nav>
+        <a href="#map">Mental model</a>
+        <a href="#speculative">Draft–target decoding</a>
+        <a href="#medusa">Medusa heads</a>
+        <a href="#parallelism">Tensor vs pipeline</a>
+        <a href="#compose">Compose the system</a>
+        <a href="#lab">Sizing lab</a>
+        <a href="#quiz">Knowledge check</a>
+      </nav>
+    </aside>
+
+    <main>
+      <header class="hero">
+        <div class="hero-top"><span class="stage-chip">Stage 7 of 12</span><span class="duration">~55 min · systems + math</span></div>
+        <h1>Make decoding do more per step.</h1>
+        <p class="dek">Autoregressive generation is serial by definition—but the hardware does not have to sit idle. Learn how <strong>speculation buys time-axis parallelism</strong>, while tensor and pipeline strategies split the model across devices.</p>
+        <div class="objective-strip" aria-label="Learning objectives">
+          <div class="objective"><b>01 / VERIFY</b><span>Trace rejection sampling and explain why the target distribution stays exact.</span></div>
+          <div class="objective"><b>02 / COMPARE</b><span>Distinguish draft models, Medusa heads, tensor parallelism, and pipeline parallelism.</span></div>
+          <div class="objective"><b>03 / DESIGN</b><span>Choose a topology from latency, memory, bandwidth, and batch constraints.</span></div>
+        </div>
+      </header>
+
+      <section id="map">
+        <div class="section-num">01 · Mental model</div>
+        <h2>Two axes of parallel work</h2>
+        <p class="lead">Every optimization in this stage attacks a different source of serial work. Confusing the axes leads to expensive deployments that are fast on paper and slow in production.</p>
+        <div class="concept-pair">
+          <article class="concept">
+            <div class="symbol">t→</div>
+            <h3>Parallelize across future tokens</h3>
+            <p>A cheap predictor proposes several continuations. The expensive target checks them in one forward pass. This is <strong>speculative decoding</strong>: improve latency without changing the model’s accepted distribution.</p>
+          </article>
+          <article class="concept">
+            <div class="symbol">Σ</div>
+            <h3>Parallelize one model step</h3>
+            <p>Split weights or layers across accelerators. This is <strong>model parallelism</strong>: fit a large model and reduce per-step compute time, while paying communication or pipeline-bubble costs.</p>
+          </article>
+        </div>
+        <div class="callout"><b>Keep the accounting separate.</b> Speculation changes how many output tokens a target pass can retire. Tensor and pipeline parallelism change the cost and placement of that target pass. They can—and often should—be composed.</div>
+      </section>
+
+      <section id="speculative">
+        <div class="section-num">02 · Draft–target decoding</div>
+        <h2>Predict cheaply. Verify exactly.</h2>
+        <p class="lead">A small draft model <em>q</em> proposes a block of <em>k</em> tokens. The target model <em>p</em> scores the whole block in parallel, using the same causal mask as ordinary decoding.</p>
+
+        <div class="diagram" aria-label="Speculative decoding token example">
+          <div class="diagram-title"><strong>One verification pass</strong><span>k = 4</span></div>
+          <div class="token-row">
+            <span class="token">The</span><span class="arrow">→</span>
+            <span class="token accept">kernel</span><span class="token accept">launch</span><span class="token reject">was</span><span class="token reject">slow</span>
+            <span class="arrow">→</span><span class="token" style="border:1px solid var(--accent)">is</span>
+          </div>
+          <p class="diagram-note">The target accepts the shared prefix (“kernel launch”), rejects at “was,” samples a corrected token (“is”), and discards all draft tokens after the first rejection.</p>
+        </div>
+
+        <h3>The exact stochastic algorithm</h3>
+        <p>For proposed token <em>xᵢ</em>, accept with probability:</p>
+        <div class="equation">a(xᵢ) = <span class="accent">min</span>(1, p(xᵢ | prefix) / q(xᵢ | prefix))</div>
+        <p>If rejected, sample the replacement from the residual distribution:</p>
+        <div class="equation">p′(x) = <span class="cool">normalize</span>(max(0, p(x) − q(x)))</div>
+        <p>This correction matters. Naively “keeping draft tokens when they look likely” biases generation. With acceptance/rejection and residual sampling, the emitted sequence has the target model’s distribution—not an approximation to it. For greedy decoding, the simpler rule is exact: accept each draft token while it equals the target argmax, then emit the target’s first disagreement.</p>
+
+        <div class="stepper" id="stepper">
+          <div class="stepper-head"><strong>Trace the verifier</strong><span class="stepper-counter" id="stepCounter">Step 1 / 4</span></div>
+          <div class="stepper-body" aria-live="polite">
+            <div class="token-row" id="stepTokens"></div>
+            <h3 id="stepTitle"></h3>
+            <p id="stepText"></p>
+          </div>
+          <div class="stepper-controls">
+            <button class="btn secondary" id="stepBack" type="button">Back</button>
+            <button class="btn" id="stepNext" type="button">Next</button>
+          </div>
+        </div>
+
+        <h3>When does it win?</h3>
+        <p>Let <em>α</em> be the probability that each proposed token is accepted, approximated as independent for intuition. With draft length <em>k</em>, the expected accepted prefix is:</p>
+        <div class="equation">E[accepted] = Σᵢ₌₁ᵏ αⁱ &nbsp;=&nbsp; α(1 − αᵏ)/(1 − α)</div>
+        <p>The target can also contribute one fresh token after the accepted prefix, so one target verification retires roughly <span class="inline-code">1 + E[accepted]</span> output tokens. But speedup is not that number: draft cost, target verification cost, KV-cache writes, sampling, and synchronization all remain.</p>
+        <div class="callout cool"><b>Operational rule:</b> Optimize accepted tokens per unit wall time, not acceptance rate alone. A larger draft may raise α and still lose because generating its proposals costs too much.</div>
+
+        <table aria-label="Speculative decoding sensitivities">
+          <thead><tr><th>Factor</th><th>Helps when</th><th>Hurts when</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Factor">Draft length k</td><td data-label="Helps when">Acceptance remains high and target verification amortizes launch/memory cost</td><td data-label="Hurts when">Late proposals are often discarded or verification grows costly</td></tr>
+            <tr><td data-label="Factor">Draft quality</td><td data-label="Helps when">Domain and decoding settings match the target workload</td><td data-label="Hurts when">Distribution shift, high temperature, or different tokenizers reduce agreement</td></tr>
+            <tr><td data-label="Factor">Batch size</td><td data-label="Helps when">Small, latency-bound batches leave target compute underutilized</td><td data-label="Hurts when">Large throughput batches already saturate the GPU and sequence lengths diverge</td></tr>
+            <tr><td data-label="Factor">Memory</td><td data-label="Helps when">Draft weights and extra temporary KV state fit comfortably</td><td data-label="Hurts when">Draft residency displaces target KV cache and lowers batch capacity</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="medusa">
+        <div class="section-num">03 · Medusa-style heads</div>
+        <h2>Speculate without a second model</h2>
+        <p class="lead">Medusa attaches multiple lightweight decoding heads to the target model’s hidden state. Head 1 predicts the next token, head 2 predicts two positions ahead, and so on. Their candidates form a tree that the base model verifies with tree attention.</p>
+
+        <div class="diagram">
+          <div class="diagram-title"><strong>Candidate tree from one hidden state</strong><span>3 heads · top-2 branches</span></div>
+          <div class="tree-wrap">
+            <div class="tree" role="img" aria-label="A candidate token tree with one accepted path and pruned alternatives">
+              <svg viewBox="0 0 700 290" preserveAspectRatio="none" aria-hidden="true">
+                <g stroke="var(--line)" stroke-width="2" fill="none">
+                  <path d="M80 145 L245 70 M80 145 L245 220 M245 70 L425 35 M245 70 L425 115 M245 220 L425 190 M245 220 L425 255 M425 35 L610 25 M425 35 L610 75 M425 115 L610 115 M425 115 L610 165"/>
+                </g>
+                <path d="M80 145 L245 70 L425 35 L610 25" stroke="var(--cool)" stroke-width="4" fill="none"/>
+              </svg>
+              <div class="node root" style="left:11%;top:50%">hidden hₜ</div>
+              <div class="node chosen" style="left:35%;top:24%">the</div>
+              <div class="node pruned" style="left:35%;top:76%">a</div>
+              <div class="node chosen" style="left:61%;top:12%">model</div>
+              <div class="node pruned" style="left:61%;top:40%">system</div>
+              <div class="node pruned" style="left:61%;top:66%">draft</div>
+              <div class="node pruned" style="left:61%;top:88%">target</div>
+              <div class="node chosen" style="left:87%;top:9%">emits</div>
+              <div class="node pruned" style="left:87%;top:26%">predicts</div>
+              <div class="node pruned" style="left:87%;top:40%">runs</div>
+              <div class="node pruned" style="left:87%;top:57%">uses</div>
+            </div>
+          </div>
+          <p class="diagram-note">Tree attention lets each candidate attend only to its own ancestors. The target scores many paths in one packed forward pass; accepted nodes become a linear output prefix.</p>
+        </div>
+
+        <table aria-label="Draft model versus Medusa comparison">
+          <thead><tr><th>Dimension</th><th>Separate draft model</th><th>Medusa-style heads</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Dimension">Extra parameters</td><td data-label="Separate draft">A second model, often much smaller</td><td data-label="Medusa heads">Several small output heads</td></tr>
+            <tr><td data-label="Dimension">Training</td><td data-label="Separate draft">Can reuse an existing compatible model; best results may need distillation</td><td data-label="Medusa heads">Heads must be trained for the base model, possibly with base-model tuning</td></tr>
+            <tr><td data-label="Dimension">Proposal structure</td><td data-label="Separate draft">Autoregressive chain</td><td data-label="Medusa heads">Branching candidate tree</td></tr>
+            <tr><td data-label="Dimension">Memory tradeoff</td><td data-label="Separate draft">Weights + its KV cache</td><td data-label="Medusa heads">Small head weights + wider verification activations</td></tr>
+            <tr><td data-label="Dimension">Best fit</td><td data-label="Separate draft">Flexible model pairs, drop-in serving stacks</td><td data-label="Medusa heads">Owned model checkpoints and tightly integrated kernels</td></tr>
+          </tbody>
+        </table>
+        <div class="callout"><b>Subtlety:</b> “No second model” does not mean “free.” Candidate expansion can explode combinatorially. Real systems cap the tree, keep only high-probability paths, and tune head count and top-k against verification kernel efficiency.</div>
+      </section>
+
+      <section id="parallelism">
+        <div class="section-num">04 · Model parallelism</div>
+        <h2>Split every layer, or split the layers?</h2>
+        <p class="lead">Tensor parallelism (TP) partitions operations inside each transformer layer. Pipeline parallelism (PP) assigns consecutive layer ranges to different stages. The topology determines the communication pattern.</p>
+
+        <div class="parallel-grid">
+          <article class="parallel-card">
+            <span class="tag">TENSOR PARALLEL</span>
+            <h3>All devices, every layer</h3>
+            <p>Shard attention heads and MLP dimensions. Each GPU computes a slice, then collectives combine partial results.</p>
+            <div class="gpu-row" aria-label="Four GPUs each holding a shard of every layer">
+              <div class="gpu"><b>GPU 0</b>L0–79<br>shard A</div><div class="gpu"><b>GPU 1</b>L0–79<br>shard B</div><div class="gpu"><b>GPU 2</b>L0–79<br>shard C</div><div class="gpu"><b>GPU 3</b>L0–79<br>shard D</div>
+            </div>
+            <ul class="mini-list"><li>Frequent all-reduce / all-gather</li><li>Low per-token latency on fast links</li><li>Communication scales with activations</li></ul>
+          </article>
+          <article class="parallel-card">
+            <span class="tag">PIPELINE PARALLEL</span>
+            <h3>Each device, some layers</h3>
+            <p>Pass hidden-state tensors from one stage to the next. Microbatches overlap stages to improve utilization.</p>
+            <div class="gpu-row" aria-label="Four GPUs each holding a consecutive layer range">
+              <div class="gpu"><b>GPU 0</b>L0–19</div><div class="gpu"><b>GPU 1</b>L20–39</div><div class="gpu"><b>GPU 2</b>L40–59</div><div class="gpu"><b>GPU 3</b>L60–79</div>
+            </div>
+            <ul class="mini-list"><li>Point-to-point stage transfers</li><li>Natural fit across slower links</li><li>Bubbles hurt small latency batches</li></ul>
+          </article>
+        </div>
+
+        <h3>Tensor parallelism: communication is on the critical path</h3>
+        <p>For a row-parallel linear layer, each rank produces a partial output and an all-reduce sums the slices. For a column-parallel layer, each rank owns output channels; a later operator may consume those shards directly or require an all-gather. A transformer block is arranged to minimize unnecessary gathers, but some collectives remain unavoidable.</p>
+        <div class="equation">T<sub>TP-step</sub> ≈ T<sub>compute</sub>/n + T<sub>collective</sub>(bytes, topology, n)</div>
+        <p>TP shines within a node connected by high-bandwidth fabrics. Across slower inter-node networking, collective latency and bandwidth can erase the compute savings—especially for low-batch decode where matrix multiplications are already memory-bound.</p>
+
+        <h3>Pipeline parallelism: throughput trades against bubbles</h3>
+        <p>With <em>p</em> pipeline stages and <em>m</em> equally sized microbatches, an idealized inference pipeline needs <em>m + p − 1</em> stage-times. Utilization is:</p>
+        <div class="equation">pipeline utilization ≈ <span class="accent">m</span> / (<span class="accent">m</span> + <span class="cool">p</span> − 1)</div>
+        <p>At <em>p = 4</em>, a single microbatch uses only 25% of ideal stage capacity; 16 microbatches raise the idealized utilization to 84%. Continuous batching helps fill stages, but decode dependencies and variable completion lengths complicate scheduling.</p>
+
+        <table aria-label="Tensor and pipeline parallelism decision matrix">
+          <thead><tr><th>Question</th><th>Favor TP</th><th>Favor PP</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Question">Primary goal</td><td data-label="Favor TP">Minimum single-request latency</td><td data-label="Favor PP">Fit weights; scale throughput across nodes</td></tr>
+            <tr><td data-label="Question">Interconnect</td><td data-label="Favor TP">Fast, high-bandwidth, low-latency links</td><td data-label="Favor PP">Slower links; only stage-boundary activations cross</td></tr>
+            <tr><td data-label="Question">Traffic</td><td data-label="Favor TP">Small batches, latency-sensitive</td><td data-label="Favor PP">Enough concurrent work to fill stages</td></tr>
+            <tr><td data-label="Question">Layer balance</td><td data-label="Favor TP">Regular layers and divisible dimensions</td><td data-label="Favor PP">Layer groups can be balanced by measured stage time</td></tr>
+            <tr><td data-label="Question">Failure scope</td><td data-label="Favor TP">Tightly coupled rank group</td><td data-label="Favor PP">Tightly coupled pipeline; one failed stage stops it</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="compose">
+        <div class="section-num">05 · System composition</div>
+        <h2>A topology is a product decision</h2>
+        <p class="lead">Production stacks commonly use 2D or 3D layouts: TP inside a node, PP across nodes, and data-parallel replicas for request capacity. Speculation sits above that topology and changes the scheduler’s work shape.</p>
+
+        <div class="diagram">
+          <div class="diagram-title"><strong>Example: 2 nodes × 4 GPUs</strong><span>TP=4 · PP=2</span></div>
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center">
+            <div class="parallel-card" style="padding:16px;border-radius:10px"><b>Pipeline stage 0</b><div class="gpu-row" style="margin-bottom:0"><div class="gpu">TP0</div><div class="gpu">TP1</div><div class="gpu">TP2</div><div class="gpu">TP3</div></div></div>
+            <div class="arrow">hidden →</div>
+            <div class="parallel-card" style="padding:16px;border-radius:10px"><b>Pipeline stage 1</b><div class="gpu-row" style="margin-bottom:0"><div class="gpu">TP0</div><div class="gpu">TP1</div><div class="gpu">TP2</div><div class="gpu">TP3</div></div></div>
+          </div>
+          <p class="diagram-note">Fast intra-node collectives keep TP local; only the hidden state crosses nodes at the PP boundary. A second 8-GPU replica can add data-parallel serving capacity.</p>
+        </div>
+
+        <h3>Four interactions to reason about</h3>
+        <ol class="checklist">
+          <li><div><b>Verification changes tensor shapes.</b><br><span style="color:var(--muted)">A speculative verification pass processes multiple sequence positions. Kernels may become more compute-efficient, but activation memory and attention work grow.</span></div></li>
+          <li><div><b>Acceptance varies per sequence.</b><br><span style="color:var(--muted)">In a batch, each request may accept a different prefix length. The scheduler must compact or re-bucket sequences to avoid idle lanes.</span></div></li>
+          <li><div><b>KV-cache ownership follows the target.</b><br><span style="color:var(--muted)">Accepted positions commit to the target cache; rejected speculative state must not leak into later attention. With PP, each stage owns cache for its layer range.</span></div></li>
+          <li><div><b>Tail latency can hide behind averages.</b><br><span style="color:var(--muted)">A high mean acceptance rate does not guarantee stable p99. Prompts, domains, sampling parameters, and tool-call tokens can create low-acceptance cohorts.</span></div></li>
+        </ol>
+
+        <h3>Measure the pipeline, not just the model</h3>
+        <div class="code-wrap">
+          <button class="copy" type="button" data-copy="metricsCode">Copy</button>
+          <pre id="metricsCode"><code># Per request and aggregated by cohort
+accepted_tokens_per_verify
+proposed_tokens_per_verify
+acceptance_depth_histogram
+verify_ms, draft_ms, scheduler_ms
+inter_token_latency_ms       # p50 / p95 / p99
+kv_cache_bytes_committed
+collective_ms_by_operation   # TP
+pipeline_stage_idle_ratio    # PP
+
+# Always segment by:
+# model pair, prompt domain, batch size, temperature,
+# input/output length bucket, hardware topology</code></pre>
+        </div>
+      </section>
+
+      <section id="lab">
+        <div class="section-num">06 · Interactive sizing lab</div>
+        <h2>Stress-test the intuition</h2>
+        <p class="lead">This back-of-the-envelope model is deliberately simple. Use it to reject obviously poor configurations before benchmarking on real hardware.</p>
+
+        <div class="lab">
+          <div class="lab-head"><h3>Speculation estimator</h3><span>illustrative model</span></div>
+          <div class="lab-body">
+            <div class="controls">
+              <div class="control"><label><span>Draft length k</span><output id="kOut">4</output></label><input id="k" type="range" min="1" max="12" value="4" step="1"></div>
+              <div class="control"><label><span>Per-token acceptance α</span><output id="aOut">0.75</output></label><input id="a" type="range" min="0.30" max="0.98" value="0.75" step="0.01"></div>
+              <div class="control"><label><span>Draft cost / target step</span><output id="dOut">0.30×</output></label><input id="d" type="range" min="0.05" max="1.00" value="0.30" step="0.05"></div>
+              <div class="control"><label><span>Verify cost / target step</span><output id="vOut">1.15×</output></label><input id="v" type="range" min="0.80" max="2.50" value="1.15" step="0.05"></div>
+            </div>
+            <div class="result">
+              <div class="metric"><b id="acceptedMetric">2.05</b><span>expected accepted</span></div>
+              <div class="metric"><b id="speedMetric">2.34×</b><span>idealized speedup</span></div>
+              <div class="recommendation" id="specAdvice"><b>Promising.</b> Benchmark this point and its neighboring draft lengths.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lab">
+          <div class="lab-head"><h3>Pipeline bubble estimator</h3><span>balanced-stage idealization</span></div>
+          <div class="lab-body">
+            <div class="controls">
+              <div class="control"><label><span>Pipeline stages p</span><output id="pOut">4</output></label><input id="p" type="range" min="1" max="16" value="4" step="1"></div>
+              <div class="control"><label><span>Concurrent microbatches m</span><output id="mOut">8</output></label><input id="m" type="range" min="1" max="64" value="8" step="1"></div>
+            </div>
+            <div class="result">
+              <div class="metric"><b id="utilMetric">72.7%</b><span>ideal utilization</span></div>
+              <div class="metric"><b id="bubbleMetric">27.3%</b><span>bubble fraction</span></div>
+              <div class="recommendation" id="pipeAdvice"><b>Usable for throughput.</b> Verify stage balance and decode scheduling.</div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Minimal benchmark harness</h3>
+        <p>Benchmark each mode with identical prompts, sampling configuration, request arrival trace, and output cap. Warm caches and kernels before collecting measurements.</p>
+        <div class="code-wrap">
+          <button class="copy" type="button" data-copy="benchCode">Copy</button>
+          <pre id="benchCode"><code>for mode in [baseline, speculative_k4, speculative_k8]:
+    warmup(mode, requests=50)
+    results = replay(
+        mode=mode,
+        arrival_trace=trace,
+        prompts=prompt_corpus,
+        temperature=0.7,
+        max_new_tokens=256,
+    )
+    report(
+        throughput=results.output_tokens / results.wall_time,
+        ttft=pctl(results.time_to_first_token, [50, 95, 99]),
+        itl=pctl(results.inter_token_latency, [50, 95, 99]),
+        acceptance=histogram(results.accepted_depth),
+        peak_kv_bytes=results.peak_kv_bytes,
+    )</code></pre>
+        </div>
+        <div class="callout cool"><b>Benchmark invariant:</b> Compare output quality and token distributions too. A faster implementation that silently changes sampling semantics, truncates candidates, or uses a different tokenizer is not the same system.</div>
+      </section>
+
+      <section id="quiz">
+        <div class="section-num">07 · Knowledge check</div>
+        <h2>Defend the design</h2>
+        <p class="lead">Choose an answer, then read the explanation. A production design review should demand the same reasoning.</p>
+        <div class="quiz">
+          <div class="question" data-answer="1">
+            <h3>1. Why does correct speculative sampling preserve the target distribution?</h3>
+            <div class="answers"><button class="answer" type="button">The draft is trained on the same data.</button><button class="answer" type="button">Acceptance ratios plus residual sampling correct for q’s proposal bias.</button><button class="answer" type="button">The target always accepts the highest-logit token.</button></div>
+            <p class="feedback">The draft only proposes. The acceptance ratio and residual distribution ensure the final sample is distributed according to p.</p>
+          </div>
+          <div class="question" data-answer="2">
+            <h3>2. Which metric best captures speculative decoding’s useful work?</h3>
+            <div class="answers"><button class="answer" type="button">Draft model parameter count</button><button class="answer" type="button">Peak acceptance rate on one prompt</button><button class="answer" type="button">Accepted output tokens per unit wall time</button></div>
+            <p class="feedback">Acceptance alone ignores draft and verification costs. End-to-end accepted tokens per wall time captures the trade.</p>
+          </div>
+          <div class="question" data-answer="0">
+            <h3>3. You have four GPUs on one fast-interconnect node and strict per-token latency. What is the first topology to benchmark?</h3>
+            <div class="answers"><button class="answer" type="button">Tensor parallelism across the four GPUs</button><button class="answer" type="button">Four pipeline stages with one microbatch</button><button class="answer" type="button">CPU offload for all layers</button></div>
+            <p class="feedback">TP can reduce each layer’s compute time when fast links make collectives affordable. PP with one microbatch has a large bubble.</p>
+          </div>
+          <div class="question" data-answer="1">
+            <h3>4. Why can pipeline parallelism perform poorly for a single request?</h3>
+            <div class="answers"><button class="answer" type="button">Each stage duplicates every model weight.</button><button class="answer" type="button">Most stages wait while one microbatch advances serially.</button><button class="answer" type="button">It requires an all-reduce after every matrix multiplication.</button></div>
+            <p class="feedback">Without enough microbatches, the pipeline cannot overlap stages. TP—not PP—is the strategy characterized by frequent collectives inside layers.</p>
+          </div>
+          <div class="question" data-answer="2">
+            <h3>5. What is the hidden cost of adding more Medusa candidate branches?</h3>
+            <div class="answers"><button class="answer" type="button">The tokenizer vocabulary changes.</button><button class="answer" type="button">The base model must become bidirectional.</button><button class="answer" type="button">Verification activations and tree-attention work grow.</button></div>
+            <p class="feedback">Candidate trees are bounded because wider trees consume activation memory and verification compute even though the extra heads are small.</p>
+          </div>
+        </div>
+        <div class="completion">
+          <div class="scoreline"><div><span>CHECKPOINT SCORE</span><br><strong id="score">0 / 5</strong></div><button class="btn secondary" type="button" id="resetQuiz">Reset</button></div>
+          <p id="scoreText" style="margin:14px 0 0;color:var(--muted)">Answer all five to complete the checkpoint.</p>
+        </div>
+
+        <h3>Terms worth keeping</h3>
+        <dl class="glossary">
+          <div class="term"><dt>acceptance depth</dt><dd>Number of consecutive draft tokens accepted in one verification.</dd></div>
+          <div class="term"><dt>residual distribution</dt><dd>Corrected distribution used after rejecting a speculative proposal.</dd></div>
+          <div class="term"><dt>tree attention</dt><dd>Masking that lets packed candidates attend only to ancestors on their branch.</dd></div>
+          <div class="term"><dt>collective</dt><dd>Multi-rank operation such as all-reduce or all-gather used by TP.</dd></div>
+          <div class="term"><dt>pipeline bubble</dt><dd>Idle stage capacity while a pipeline fills, drains, or waits for work.</dd></div>
+          <div class="term"><dt>parallelism degree</dt><dd>Number of devices participating in a TP or PP group.</dd></div>
+        </dl>
+        <div class="footer-note"><span>Next: Stage 8 — KV-cache systems and memory scheduling</span><span>Stage 7 / 12</span></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      var progress = document.getElementById('progressBar');
+      var navLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+      var sections = navLinks.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+      function updateScroll() {
+        var max = document.documentElement.scrollHeight - window.innerHeight;
+        progress.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + '%';
+        var current = 0;
+        sections.forEach(function (s, i) { if (s && s.getBoundingClientRect().top < 180) current = i; });
+        navLinks.forEach(function (a, i) { a.classList.toggle('active', i === current); });
+      }
+      window.addEventListener('scroll', updateScroll, { passive: true });
+      updateScroll();
+
+      var steps = [
+        { title:'1. Draft a short continuation', text:'The draft model runs autoregressively and proposes [kernel, launch, was, slow]. It also stores q probabilities for the sampled tokens.', tokens:[['kernel',''],['launch',''],['was',''],['slow','']] },
+        { title:'2. Verify in one target pass', text:'The target processes the proposed positions together under a causal mask. It returns p distributions for every position, plus one position beyond the proposal.', tokens:[['kernel','accept'],['launch','accept'],['was',''],['slow','']] },
+        { title:'3. Stop at the first rejection', text:'“kernel” and “launch” pass their acceptance tests. “was” fails. Everything after that point is discarded, even if a later token would have matched.', tokens:[['kernel','accept'],['launch','accept'],['was','reject'],['slow','reject']] },
+        { title:'4. Correct and continue', text:'Sample “is” from the residual distribution at the rejected position. Commit [kernel, launch, is] to the target KV cache, then begin another speculative round.', tokens:[['kernel','accept'],['launch','accept'],['is','']] }
+      ];
+      var step = 0;
+      function renderStep() {
+        var s = steps[step], holder = document.getElementById('stepTokens');
+        holder.innerHTML = '';
+        s.tokens.forEach(function (t, i) {
+          var el = document.createElement('span'); el.className = 'token ' + t[1]; el.textContent = t[0]; holder.appendChild(el);
+          if (i < s.tokens.length - 1) { var ar = document.createElement('span'); ar.className='arrow'; ar.textContent='→'; holder.appendChild(ar); }
+        });
+        document.getElementById('stepTitle').textContent=s.title;
+        document.getElementById('stepText').textContent=s.text;
+        document.getElementById('stepCounter').textContent='Step '+(step+1)+' / '+steps.length;
+        document.getElementById('stepBack').disabled=step===0;
+        document.getElementById('stepNext').textContent=step===steps.length-1?'Restart':'Next';
+      }
+      document.getElementById('stepBack').addEventListener('click',function(){ if(step>0){step--;renderStep();} });
+      document.getElementById('stepNext').addEventListener('click',function(){ step=step===steps.length-1?0:step+1;renderStep(); });
+      renderStep();
+
+      function speculation() {
+        var k=+document.getElementById('k').value, a=+document.getElementById('a').value, d=+document.getElementById('d').value, v=+document.getElementById('v').value;
+        var accepted = a===1 ? k : a*(1-Math.pow(a,k))/(1-a);
+        var retired=1+accepted;
+        var speed=retired/(d*k+v);
+        document.getElementById('kOut').textContent=k;
+        document.getElementById('aOut').textContent=a.toFixed(2);
+        document.getElementById('dOut').textContent=d.toFixed(2)+'×';
+        document.getElementById('vOut').textContent=v.toFixed(2)+'×';
+        document.getElementById('acceptedMetric').textContent=accepted.toFixed(2);
+        document.getElementById('speedMetric').textContent=speed.toFixed(2)+'×';
+        var advice=document.getElementById('specAdvice');
+        advice.innerHTML=speed>=1.5?'<b>Promising.</b> Benchmark this point and its neighboring draft lengths.':speed>1?'<b>Marginal.</b> Small real-world overheads could erase this gain.':'<b>Likely slower.</b> Reduce draft cost or length, or improve proposal agreement.';
+      }
+      ['k','a','d','v'].forEach(function(id){document.getElementById(id).addEventListener('input',speculation);});
+      speculation();
+
+      function pipeline() {
+        var p=+document.getElementById('p').value,m=+document.getElementById('m').value,u=m/(m+p-1),b=1-u;
+        document.getElementById('pOut').textContent=p;document.getElementById('mOut').textContent=m;
+        document.getElementById('utilMetric').textContent=(u*100).toFixed(1)+'%';document.getElementById('bubbleMetric').textContent=(b*100).toFixed(1)+'%';
+        document.getElementById('pipeAdvice').innerHTML=u>=.8?'<b>Healthy ideal utilization.</b> Now measure imbalance and decode dependencies.':u>=.6?'<b>Usable for throughput.</b> Verify stage balance and decode scheduling.':'<b>Bubble-dominated.</b> Add concurrent work, reduce stages, or prefer TP for latency.';
+      }
+      ['p','m'].forEach(function(id){document.getElementById(id).addEventListener('input',pipeline);});
+      pipeline();
+
+      document.querySelectorAll('.copy').forEach(function(btn){btn.addEventListener('click',function(){var text=document.getElementById(btn.getAttribute('data-copy')).innerText;navigator.clipboard.writeText(text).then(function(){btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy';},1200);});});});
+
+      var answered={};
+      document.querySelectorAll('.question').forEach(function(q, qi){
+        var correct=+q.getAttribute('data-answer');
+        q.querySelectorAll('.answer').forEach(function(btn, ai){btn.addEventListener('click',function(){
+          if(answered[qi]!==undefined)return;
+          answered[qi]=ai;
+          btn.classList.add(ai===correct?'correct':'wrong');
+          if(ai!==correct) q.querySelectorAll('.answer')[correct].classList.add('correct');
+          q.querySelector('.feedback').classList.add('show');
+          updateScore();
+        });});
+      });
+      function updateScore(){var keys=Object.keys(answered),right=keys.filter(function(k){return answered[k]===+document.querySelectorAll('.question')[k].getAttribute('data-answer');}).length;document.getElementById('score').textContent=right+' / 5';document.getElementById('scoreText').textContent=keys.length<5?(5-keys.length)+' question'+(5-keys.length===1?'':'s')+' remaining.':right===5?'Complete. You can defend the core tradeoffs.':right>=4?'Strong. Revisit the explanation for the missed item.':'Review the verifier and topology sections, then reset and try again.';}
+      document.getElementById('resetQuiz').addEventListener('click',function(){answered={};document.querySelectorAll('.answer').forEach(function(a){a.classList.remove('correct','wrong');});document.querySelectorAll('.feedback').forEach(function(f){f.classList.remove('show');});updateScore();});
+    })();
+  </script>
+</body>
+</html>
