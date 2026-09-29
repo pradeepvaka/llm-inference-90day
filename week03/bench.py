@@ -48,23 +48,23 @@ def main():
     ap.add_argument("--jsonl", default="bench.jsonl")
     a = ap.parse_args()
 
+    t_start = time.time()
     with concurrent.futures.ThreadPoolExecutor(max_workers=a.concurrency) as ex:
         futs = [ex.submit(one_request, a.url, a.prompt_len, a.out_len)
                 for _ in range(a.n_requests)]
         # warmup request excluded from stats (kernel autotune / cache warmup)
         warm = futs.pop(0).result()
         recs = [f.result() for f in futs]
-
-    wall = max(r["e2e_ms"] for r in recs) / 1000  # approx wall for concurrency>=1
+    wall = time.time() - t_start  # true wall clock: submit of first -> completion of last
     with open(a.jsonl, "w") as f:
         for r in recs:
             f.write(json.dumps(r) + "\n")
     tok = sum(r["n_tokens"] for r in recs)
-    print(f"requests={len(recs)} (+1 warmup)  total_tokens={tok}")
+    print(f"requests={len(recs)} (+1 warmup)  total_tokens={tok}  wall_s={wall:.1f}")
     for k in ("ttft_ms", "tpot_ms", "itl_p99_ms", "e2e_ms"):
         xs = [r[k] for r in recs if r[k] is not None]
         print(f"{k:10s} p50={percentile(xs,50):8.1f}  p99={percentile(xs,99):8.1f}")
-    print(f"throughput ~= {tok / wall:.0f} tok/s (output tokens / max e2e)")
+    print(f"throughput ~= {tok / wall:.0f} tok/s (output tokens / wall clock)")
 
 if __name__ == "__main__":
     main()
