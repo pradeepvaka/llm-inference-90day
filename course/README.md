@@ -15,7 +15,7 @@ Course index (Google Doc): https://docs.google.com/document/d/1nnmtDFpOQDeUurNA9
 | 5 | KV Cache Optimization | https://muse.ai/s/stage-5-kv-cache-optimization-xfxh66xt3xfjx0x0h | stage-05-kv-cache-optimization.html |
 | 6 | Quantization and Compression | https://muse.ai/s/stage-6-quantization-and-compression-xwxe67lhe4xf6g | stage-06-quantization-and-compression.html |
 | 7 | Speculative Decoding and Parallelism | https://muse.ai/s/stage-7-speculative-decoding-and-xlxj6axlmxcjzx0xx | stage-07-speculative-decoding-and-parallelism.html |
-| 8 | Kernel-Level Optimization | coming Sept 25 | — |
+| 8 | Kernel-Level Optimization | https://muse.ai/s/stage-8-kernel-level-optimization-cw6exujxvxvfhxe | stage-08-kernel-level-optimization.html |
 | 9 | Distributed Inference | coming Sept 26 | — |
 | 10 | Autoscaling and Economics | coming Sept 27 | — |
 | 11 | Gateway, Routing, and Reliability | coming Sept 28 | — |
