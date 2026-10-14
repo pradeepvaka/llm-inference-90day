@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:," />
+  <title>Stage 9: Distributed Inference</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg:#f3f7f7; --surface:#ffffff; --surface-2:#e9f0f0; --ink:#11282d; --muted:#526b70;
+      --line:#cbd9da; --teal:#087f83; --teal-2:#0ca2a0; --orange:#e46334; --yellow:#d59b20;
+      --code:#10282d; --code-ink:#dff7f4; --shadow:0 16px 50px rgba(27,66,71,.10);
+      --good:#167551; --bad:#b04739;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{--bg:#071316;--surface:#0c2024;--surface-2:#112b30;--ink:#e8f5f3;--muted:#98b0b2;--line:#284148;--teal:#39c7c0;--teal-2:#71ddd4;--orange:#ff8054;--yellow:#f0bc4d;--code:#050d0f;--code-ink:#dff7f4;--shadow:0 18px 55px rgba(0,0,0,.28);--good:#6bd2a7;--bad:#ff9686}
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",sans-serif;line-height:1.55}
+    a{color:inherit}
+    button,input{font:inherit}
+    .progress{position:fixed;inset:0 0 auto;height:3px;background:transparent;z-index:20}
+    .progress span{display:block;height:100%;width:0;background:var(--orange)}
+    .wrap{width:min(1160px,calc(100% - 40px));margin:auto}
+    .hero{min-height:82vh;display:grid;align-items:center;padding:74px 0 52px;position:relative;overflow:hidden}
+    .hero:after{content:"09";position:absolute;right:-.04em;bottom:-.28em;font:700 clamp(180px,31vw,430px)/1 "IBM Plex Mono";color:var(--surface-2);z-index:-1;letter-spacing:-.09em}
+    .stage{font:600 13px/1 "IBM Plex Mono";color:var(--orange);letter-spacing:.12em;text-transform:uppercase;margin-bottom:20px}
+    h1{font-size:clamp(42px,7.3vw,90px);line-height:.96;letter-spacing:-.052em;max-width:920px;margin:0 0 28px;font-weight:700}
+    .lede{font-size:clamp(18px,2.2vw,25px);max-width:720px;color:var(--muted);margin:0}
+    .hero-grid{display:grid;grid-template-columns:1.5fr .8fr;gap:50px;align-items:end}
+    .outcomes{border-top:1px solid var(--line);padding-top:18px}
+    .outcomes strong{display:block;font:600 12px "IBM Plex Mono";color:var(--teal);text-transform:uppercase;letter-spacing:.09em;margin-bottom:12px}
+    .outcomes ul{padding:0;margin:0;list-style:none}
+    .outcomes li{padding:7px 0 7px 19px;position:relative;color:var(--muted)}
+    .outcomes li:before{content:"→";position:absolute;left:0;color:var(--orange)}
+    .jumpbar{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 93%,transparent);backdrop-filter:blur(12px);border-block:1px solid var(--line)}
+    .jumpbar .wrap{display:flex;gap:4px;overflow:auto;padding:8px 0;scrollbar-width:none}
+    .jumpbar a{white-space:nowrap;text-decoration:none;font:500 12px "IBM Plex Mono";padding:8px 11px;color:var(--muted)}
+    .jumpbar a:hover{color:var(--ink);background:var(--surface-2)}
+    section{padding:94px 0;scroll-margin-top:46px;border-bottom:1px solid var(--line)}
+    .section-head{display:grid;grid-template-columns:90px 1fr;gap:24px;margin-bottom:44px}
+    .num{font:600 13px "IBM Plex Mono";color:var(--orange);padding-top:9px}
+    h2{font-size:clamp(31px,4vw,52px);line-height:1.04;letter-spacing:-.035em;margin:0 0 13px}
+    .section-head p{font-size:18px;color:var(--muted);max-width:760px;margin:0}
+    h3{font-size:22px;margin:0 0 12px;letter-spacing:-.02em}
+    h4{font-size:15px;margin:0 0 8px}
+    p{margin:0 0 16px}
+    .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .card{background:var(--surface);border:1px solid var(--line);padding:26px;box-shadow:var(--shadow)}
+    .card p:last-child{margin-bottom:0}
+    .mono{font-family:"IBM Plex Mono"}
+    .label{font:600 11px "IBM Plex Mono";letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:9px}
+    .callout{padding:22px 24px;background:var(--surface-2);border-left:4px solid var(--orange);margin:28px 0}
+    .callout strong{display:block;margin-bottom:5px}
+    .equation{font:500 clamp(18px,2vw,24px) "IBM Plex Mono";padding:18px 20px;background:var(--code);color:var(--code-ink);overflow-wrap:anywhere;margin:16px 0}
+    .switcher{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+    .switcher button,.quiz button,.calc button{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 14px;cursor:pointer;font-family:"IBM Plex Mono";font-size:12px}
+    .switcher button[aria-pressed="true"],.calc button{background:var(--teal);color:#fff;border-color:var(--teal)}
+    .diagram{background:var(--code);color:var(--code-ink);padding:24px;min-height:300px;position:relative;overflow:hidden}
+    .topology{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;position:relative;margin:42px auto 26px;max-width:720px}
+    .gpu{position:relative;border:1px solid #7fb8b6;background:#173b40;padding:22px 8px;text-align:center;font:600 12px "IBM Plex Mono";z-index:1}
+    .gpu:before{content:"";position:absolute;top:50%;left:-13px;width:13px;height:2px;background:var(--link-color,#39c7c0)}
+    .gpu:first-child:before{display:none}
+    .fabric{max-width:720px;margin:auto;background:#24363a;border:1px dashed #678186;padding:12px;text-align:center;font:500 12px "IBM Plex Mono";color:#b9d1d0}
+    .legend{font:12px "IBM Plex Mono";color:#9fb9bb;max-width:720px;margin:20px auto 0}
+    .metric-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin-top:22px}
+    .metric{background:var(--surface);padding:18px}
+    .metric b{display:block;font:600 20px "IBM Plex Mono";color:var(--teal)}
+    .metric span{color:var(--muted);font-size:13px}
+    .matrix{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);background:var(--line);gap:1px}
+    .matrix article{background:var(--surface);padding:24px;min-height:340px}
+    .matrix .sig{font:600 34px "IBM Plex Mono";color:var(--teal);display:block;margin-bottom:16px}
+    .matrix ul{padding-left:18px;color:var(--muted);font-size:14px}
+    .matrix li{margin-bottom:8px}
+    .verdict{font:500 12px "IBM Plex Mono";color:var(--orange);margin-top:18px}
+    .pipeline{display:grid;grid-template-columns:1fr 52px 1fr 52px 1fr;align-items:center;margin:24px 0}
+    .node{background:var(--surface);border:1px solid var(--line);padding:24px;min-height:160px}
+    .node .n{font:600 13px "IBM Plex Mono";color:var(--orange)}
+    .arrow{text-align:center;color:var(--teal);font-size:28px}
+    .timeline{display:grid;grid-template-columns:110px repeat(8,1fr);gap:2px;font:11px "IBM Plex Mono";margin-top:30px;overflow:hidden}
+    .timeline span{min-height:32px;padding:8px 4px;background:var(--surface);text-align:center}
+    .timeline .rowhead{text-align:left;color:var(--muted);background:transparent}
+    .timeline .prefill{background:color-mix(in srgb,var(--orange) 28%,var(--surface))}
+    .timeline .decode{background:color-mix(in srgb,var(--teal) 27%,var(--surface))}
+    .timeline .xfer{background:color-mix(in srgb,var(--yellow) 35%,var(--surface))}
+    .steps{counter-reset:steps;display:grid;gap:1px;background:var(--line);border:1px solid var(--line)}
+    .steps article{counter-increment:steps;background:var(--surface);display:grid;grid-template-columns:66px 1fr;padding:24px}
+    .steps article:before{content:counter(steps,decimal-leading-zero);font:600 14px "IBM Plex Mono";color:var(--orange)}
+    .steps p{color:var(--muted);margin:0}
+    .calc{background:var(--surface);border:1px solid var(--line);padding:28px}
+    .calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0}
+    label{font:500 12px "IBM Plex Mono";color:var(--muted)}
+    input[type="number"]{width:100%;margin-top:7px;background:var(--bg);color:var(--ink);border:1px solid var(--line);padding:10px}
+    .result{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:20px}
+    .result div{background:var(--surface-2);padding:16px}
+    .result b{font:600 20px "IBM Plex Mono";display:block;color:var(--teal)}
+    .result small{color:var(--muted)}
+    .codebox{background:var(--code);color:var(--code-ink);padding:22px;overflow:auto;font:13px/1.65 "IBM Plex Mono";white-space:pre;margin:16px 0}
+    .copy{float:right;border:1px solid #466169;background:transparent;color:#cce4e2;padding:6px 9px;cursor:pointer;font:11px "IBM Plex Mono"}
+    .decision{display:grid;gap:1px;background:var(--line);border:1px solid var(--line)}
+    .decision .row{display:grid;grid-template-columns:1.1fr 1fr 1.3fr 1.5fr;background:var(--surface)}
+    .decision .row>div{padding:15px;border-right:1px solid var(--line)}
+    .decision .head{font:600 11px "IBM Plex Mono";text-transform:uppercase;color:var(--muted);background:var(--surface-2)}
+    .tag{display:inline-block;font:600 10px "IBM Plex Mono";padding:3px 6px;background:var(--surface-2);color:var(--teal)}
+    .failure{display:grid;grid-template-columns:44px 1fr;gap:14px;padding:20px 0;border-top:1px solid var(--line)}
+    .failure .mark{font:600 22px "IBM Plex Mono";color:var(--orange)}
+    .failure p{color:var(--muted);margin:3px 0 0}
+    .quiz{display:grid;gap:14px}
+    .q{background:var(--surface);border:1px solid var(--line);padding:24px}
+    .q p{font-weight:600}
+    .answers{display:grid;gap:8px}
+    .answers button{text-align:left;width:100%}
+    .answers button.correct{background:color-mix(in srgb,var(--good) 16%,var(--surface));border-color:var(--good)}
+    .answers button.wrong{background:color-mix(in srgb,var(--bad) 15%,var(--surface));border-color:var(--bad)}
+    .explain{display:none;color:var(--muted);padding-top:12px;margin:0;font-size:14px}
+    .explain.show{display:block}
+    .score{font:600 14px "IBM Plex Mono";color:var(--teal);margin-top:18px}
+    .finish{padding:80px 0 110px}
+    .finish-box{background:var(--code);color:var(--code-ink);padding:clamp(28px,5vw,62px);display:grid;grid-template-columns:1.5fr 1fr;gap:40px}
+    .finish h2{color:#effffe}
+    .finish p{color:#a8c2c2}
+    .check{list-style:none;padding:0;margin:0}
+    .check li{padding:10px 0;border-bottom:1px solid #29454a;color:#d7eae8}
+    .check li:before{content:"□";font-family:"IBM Plex Mono";color:#54d7cc;margin-right:10px}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:800px){
+      .wrap{width:min(100% - 28px,680px)} .jumpbar .wrap{flex-wrap:wrap}.jumpbar a{flex:1 1 calc(25% - 4px);text-align:center;padding:7px 4px;font-size:10px}.hero{min-height:auto;padding-top:60px}.hero-grid,.grid-2,.grid-3,.finish-box{grid-template-columns:1fr}.outcomes{margin-top:30px}.section-head{grid-template-columns:1fr;gap:8px}.num{padding:0}.matrix{grid-template-columns:1fr 1fr}.pipeline{grid-template-columns:1fr}.arrow{transform:rotate(90deg);padding:6px}.calc-grid,.result{grid-template-columns:1fr 1fr}.decision{background:none;border:0;gap:12px}.decision .head{display:none}.decision .row{grid-template-columns:1fr;border:1px solid var(--line)}.decision .row>div{border:0;border-bottom:1px solid var(--line);padding:12px}.decision .row>div:before{content:attr(data-label);display:block;font:600 10px "IBM Plex Mono";text-transform:uppercase;color:var(--muted);margin-bottom:4px}.timeline{grid-template-columns:76px repeat(8,minmax(24px,1fr));font-size:9px}.metric-row{grid-template-columns:1fr}.metric{padding:14px}section{padding:68px 0}}
+    @media(max-width:520px){.matrix{grid-template-columns:1fr}.calc-grid,.result{grid-template-columns:1fr}.topology{grid-template-columns:1fr 1fr}.gpu:nth-child(3):before{display:none}.diagram{padding:16px}.steps article{grid-template-columns:44px 1fr;padding:20px 15px}.hero:after{font-size:200px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+  <div class="progress" aria-hidden="true"><span id="progress"></span></div>
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="stage">Stage 09 · Systems track</div>
+        <h1>When one GPU is no longer the machine.</h1>
+        <p class="lede">Distributed inference is a traffic-engineering problem disguised as model serving. Learn to partition computation, move state deliberately, and recognize when the network—not the FLOPs—sets the ceiling.</p>
+      </div>
+      <aside class="outcomes">
+        <strong>By the end, you can</strong>
+        <ul>
+          <li>Choose a parallelism strategy from first principles</li>
+          <li>Reason about NVLink and InfiniBand bottlenecks</li>
+          <li>Design a disaggregated prefill/decode path</li>
+          <li>Budget all-to-all traffic for MoE serving</li>
+        </ul>
+      </aside>
+    </div>
+  </header>
+
+  <nav class="jumpbar" aria-label="Stage sections"><div class="wrap">
+    <a href="#mental-model">01 Mental model</a><a href="#fabric">02 Fabric</a><a href="#parallelism">03 Parallelism</a><a href="#disaggregation">04 P/D split</a><a href="#moe">05 MoE</a><a href="#operations">06 Operations</a><a href="#lab">07 Lab</a><a href="#check">08 Check</a>
+  </div></nav>
+
+  <main>
+    <section id="mental-model"><div class="wrap">
+      <div class="section-head"><div class="num">01 / 08</div><div><h2>Start with the communication path</h2><p>A deployment scales only when useful compute grows faster than synchronization and state movement. Every partition introduces a collective, a transfer, or a bubble.</p></div></div>
+      <div class="grid-3">
+        <article class="card"><div class="label">Weights</div><h3>What must fit?</h3><p>Parameters, optimizer-free serving buffers, CUDA graphs, and runtime workspaces. Tensor and pipeline parallelism divide this footprint; replicas multiply it.</p></article>
+        <article class="card"><div class="label">KV cache</div><h3>What keeps growing?</h3><p>Per-request state scales with active tokens, layers, KV heads, and precision. In long-context serving, KV capacity—not weights—often limits concurrency.</p></article>
+        <article class="card"><div class="label">Activations</div><h3>What must move?</h3><p>Tensor parallelism exchanges partial activations every layer. Pipeline parallelism moves boundary activations. Expert parallelism dispatches tokens all-to-all.</p></article>
+      </div>
+      <div class="callout"><strong>The governing question</strong>For each byte crossing a link, ask: is it on the latency-critical path, how often does it move, and can its transfer overlap useful compute?</div>
+      <div class="grid-2">
+        <div><h3>Latency has two regimes</h3><p><b>Prefill</b> processes many prompt tokens in parallel and is compute-heavy. <b>Decode</b> processes one step at a time, repeatedly reading weights and KV state; it is usually memory-bandwidth and synchronization sensitive.</p></div>
+        <div><h3>The scale-out tax</h3><div class="equation">T<sub>step</sub> ≈ max(T<sub>compute</sub>, T<sub>memory</sub>, T<sub>comm</sub>) + T<sub>sync</sub></div><p>Adding GPUs helps only if the reduced compute term outweighs communication and synchronization overhead.</p></div>
+      </div>
+    </div></section>
+
+    <section id="fabric"><div class="wrap">
+      <div class="section-head"><div class="num">02 / 08</div><div><h2>Two fabrics, two jobs</h2><p>Inside a node, accelerator links behave like a tightly coupled fabric. Across nodes, the network is farther away and more contended. Your topology should respect that boundary.</p></div></div>
+      <div class="switcher" role="group" aria-label="Interconnect view">
+        <button data-fabric="nv" aria-pressed="true">NVLink / node-local</button><button data-fabric="ib" aria-pressed="false">InfiniBand / scale-out</button><button data-fabric="pcie" aria-pressed="false">PCIe / fallback</button>
+      </div>
+      <div class="diagram" id="fabricDiagram">
+        <div class="topology" id="gpuGrid"><div class="gpu">GPU 0</div><div class="gpu">GPU 1</div><div class="gpu">GPU 2</div><div class="gpu">GPU 3</div></div>
+        <div class="fabric" id="fabricName">High-bandwidth node-local switching</div>
+        <p class="legend" id="fabricText">Best home for fine-grained tensor-parallel collectives. Keep chatty all-reduces inside the node whenever possible.</p>
+      </div>
+      <div class="metric-row">
+        <div class="metric"><b>Bandwidth</b><span>Sets the transfer time for large activation or KV payloads.</span></div>
+        <div class="metric"><b>Latency</b><span>Dominates small, frequent collectives and token-by-token decode.</span></div>
+        <div class="metric"><b>Contention</b><span>Turns a paper topology into a tail-latency problem under load.</span></div>
+      </div>
+      <div class="callout"><strong>Topology rule</strong>Map the highest-frequency collective to the fastest fabric. A common hierarchy is TP within a node, PP or DP across nodes, and EP within the smallest low-contention island that fits the experts.</div>
+    </div></section>
+
+    <section id="parallelism"><div class="wrap">
+      <div class="section-head"><div class="num">03 / 08</div><div><h2>Parallelism is not one knob</h2><p>Each strategy shards a different object and pays with a different communication primitive. Hybrid serving composes them.</p></div></div>
+      <div class="matrix">
+        <article><span class="sig">DP</span><h3>Data parallel</h3><p>Replicate the model; route independent requests to each replica.</p><ul><li>Shards: request stream</li><li>Comm: none per forward pass</li><li>Win: throughput and failure isolation</li><li>Cost: full weights per replica</li></ul><div class="verdict">Use first when one replica fits.</div></article>
+        <article><span class="sig">TP</span><h3>Tensor parallel</h3><p>Split matrix operations across devices inside each layer.</p><ul><li>Shards: tensor dimensions</li><li>Comm: all-reduce / all-gather</li><li>Win: lower per-device weight footprint</li><li>Cost: frequent synchronized traffic</li></ul><div class="verdict">Keep on the fastest fabric.</div></article>
+        <article><span class="sig">PP</span><h3>Pipeline parallel</h3><p>Place consecutive layer ranges on different stages.</p><ul><li>Shards: model depth</li><li>Comm: stage-boundary activations</li><li>Win: scale past one node</li><li>Cost: bubbles and uneven stages</li></ul><div class="verdict">Batching amortizes the bubble.</div></article>
+        <article><span class="sig">EP</span><h3>Expert parallel</h3><p>Distribute MoE experts; route tokens to their owners.</p><ul><li>Shards: expert modules</li><li>Comm: all-to-all token dispatch</li><li>Win: sparse parameter scale</li><li>Cost: load imbalance and hotspots</li></ul><div class="verdict">Balance routing, not just FLOPs.</div></article>
+      </div>
+      <div class="grid-2" style="margin-top:28px">
+        <div class="card"><div class="label">Composition example</div><h3>TP 8 × PP 2 × DP 4</h3><p>This occupies <b>64 GPUs</b>: eight-way tensor groups, two pipeline stages per replica, and four serving replicas. A request uses 16 GPUs; four requests can progress on independent replicas.</p></div>
+        <div class="card"><div class="label">Sanity check</div><h3>World size equation</h3><div class="equation">N = TP × PP × DP<br><span style="font-size:.72em">(+ EP as an axis or replacement inside the layout)</span></div><p>Frameworks differ in how EP overlaps or nests with TP/DP, so inspect the actual process groups—not just the launch flags.</p></div>
+      </div>
+    </div></section>
+
+    <section id="disaggregation"><div class="wrap">
+      <div class="section-head"><div class="num">04 / 08</div><div><h2>Disaggregate prefill and decode</h2><p>Split heterogeneous work into specialized pools, then transfer the KV state once. The architecture gains independent scaling—and inherits a placement problem.</p></div></div>
+      <div class="pipeline" aria-label="Disaggregated prefill and decode flow">
+        <div class="node"><span class="n">A · ROUTER</span><h3>Classify request</h3><p>Estimate prompt cost, select a prefill worker, reserve decode capacity.</p></div><div class="arrow">→</div>
+        <div class="node"><span class="n">B · PREFILL POOL</span><h3>Build KV state</h3><p>Large token batches, compute-oriented scheduling, chunked prefill when needed.</p></div><div class="arrow">→</div>
+        <div class="node"><span class="n">C · DECODE POOL</span><h3>Generate tokens</h3><p>Small iterative steps, memory-bandwidth focus, tight inter-token latency.</p></div>
+      </div>
+      <div class="timeline" aria-label="Simplified request timeline">
+        <span class="rowhead">Request A</span><span class="prefill">P</span><span class="prefill">P</span><span class="xfer">KV</span><span class="decode">D</span><span class="decode">D</span><span class="decode">D</span><span class="decode">D</span><span class="decode">D</span>
+        <span class="rowhead">Request B</span><span></span><span class="prefill">P</span><span class="prefill">P</span><span class="xfer">KV</span><span class="decode">D</span><span class="decode">D</span><span class="decode">D</span><span class="decode">D</span>
+        <span class="rowhead">Request C</span><span></span><span></span><span class="prefill">P</span><span class="prefill">P</span><span class="xfer">KV</span><span class="decode">D</span><span class="decode">D</span><span class="decode">D</span>
+      </div>
+      <div class="grid-2" style="margin-top:34px">
+        <div><h3>Break-even condition</h3><div class="equation">gain from specialization &gt; KV transfer + queueing + coordination</div><p>Disaggregation is compelling when prompt and output mixes vary enough that one shared scheduler causes interference, and when KV transfer is predictable on a dedicated path.</p></div>
+        <div><h3>What the router must know</h3><ul><li>Predicted prefill work from prompt length and model shape</li><li>Decode occupancy and KV capacity at candidate workers</li><li>Topology distance and current transfer pressure</li><li>SLO class: time-to-first-token versus inter-token latency</li></ul></div>
+      </div>
+      <div class="steps" style="margin-top:30px">
+        <article><div><h3>Reserve before transfer</h3><p>Do not finish prefill and then discover no decode slot exists. Admission control should reserve destination capacity or define a bounded spill path.</p></div></article>
+        <article><div><h3>Stream or chunk KV</h3><p>Avoid a monolithic handoff when the runtime supports layer-wise or chunk-wise movement. Overlap transfer with remaining prefill work.</p></div></article>
+        <article><div><h3>Backpressure at ingress</h3><p>Once decode is saturated, admitting more prefills only creates expensive state that cannot advance. Reject, delay, or downgrade before work is sunk.</p></div></article>
+      </div>
+    </div></section>
+
+    <section id="moe"><div class="wrap">
+      <div class="section-head"><div class="num">05 / 08</div><div><h2>MoE: sparse compute, dense coordination</h2><p>A router selects a small number of experts per token. Compute stays sparse, but token dispatch creates an all-to-all whose imbalance governs tail latency.</p></div></div>
+      <div class="grid-2">
+        <div><h3>Routing flow</h3><div class="steps">
+          <article><div><h4>Score</h4><p>The gate computes expert affinities for each token.</p></div></article>
+          <article><div><h4>Dispatch</h4><p>Top-k assignments are grouped and exchanged to expert owners.</p></div></article>
+          <article><div><h4>Execute</h4><p>Each expert processes its token slice, subject to capacity.</p></div></article>
+          <article><div><h4>Combine</h4><p>Outputs return to original token owners and are weighted.</p></div></article>
+        </div>
+        <div><h3>Failure mode: the hot expert</h3><p>Average load can look healthy while one expert receives a burst. That rank stalls the entire collective; all other ranks wait at the synchronization boundary.</p><div class="equation">capacity/expert = ⌈tokens × top-k × factor ÷ experts⌉</div><p>Capacity factor buys headroom but spends memory and compute. Overflow must be handled explicitly: drop, reroute, or queue—with quality and latency consequences.</p></div>
+      </div>
+      <div class="calc" style="margin-top:34px">
+        <div class="label">Interactive worksheet</div><h3>Expert capacity planner</h3>
+        <div class="calc-grid">
+          <label>Tokens in batch<input id="tokens" type="number" min="1" value="4096"></label>
+          <label>Top-k experts<input id="topk" type="number" min="1" value="2"></label>
+          <label>Total experts<input id="experts" type="number" min="1" value="64"></label>
+          <label>Capacity factor<input id="factor" type="number" min="1" step="0.05" value="1.25"></label>
+        </div>
+        <button id="calculate">Recalculate</button>
+        <div class="result" aria-live="polite">
+          <div><b id="assignments">8,192</b><small>token assignments</small></div>
+          <div><b id="average">128</b><small>average / expert</small></div>
+          <div><b id="capacity">160</b><small>reserved / expert</small></div>
+          <div><b id="headroom">25%</b><small>routing headroom</small></div>
+        </div>
+      </div>
+      <div class="callout"><strong>Operational insight</strong>Instrument expert histograms by layer and by request class. A global average hides correlated routing bursts, and correlated bursts are exactly what create all-to-all stragglers.</div>
+    </div></section>
+
+    <section id="operations"><div class="wrap">
+      <div class="section-head"><div class="num">06 / 08</div><div><h2>Operate the system you actually built</h2><p>End-to-end latency is not enough. Observe every queue and every collective boundary so a regression can be localized.</p></div></div>
+      <div class="decision">
+        <div class="row head"><div>Signal</div><div>Likely layer</div><div>Correlate with</div><div>First question</div></div>
+        <div class="row"><div data-label="Signal"><b>TTFT rises, ITL stable</b></div><div data-label="Likely layer"><span class="tag">Prefill</span></div><div data-label="Correlate with">prompt tokens, prefill queue, chunk size</div><div data-label="First question">Did long prompts start blocking short ones?</div></div>
+        <div class="row"><div data-label="Signal"><b>ITL rises across replicas</b></div><div data-label="Likely layer"><span class="tag">Decode / fabric</span></div><div data-label="Correlate with">active sequences, collective time, HBM use</div><div data-label="First question">Are all-reduces or memory reads now dominant?</div></div>
+        <div class="row"><div data-label="Signal"><b>Only one rank lags</b></div><div data-label="Likely layer"><span class="tag">Straggler</span></div><div data-label="Correlate with">GPU clocks, NIC counters, expert load</div><div data-label="First question">Is hardware slow, or did routing create skew?</div></div>
+        <div class="row"><div data-label="Signal"><b>KV transfer tail spikes</b></div><div data-label="Likely layer"><span class="tag">P/D handoff</span></div><div data-label="Correlate with">payload bytes, topology path, retries</div><div data-label="First question">Is placement crossing a congested or oversubscribed link?</div></div>
+      </div>
+      <div class="grid-2" style="margin-top:38px">
+        <div>
+          <h3>Four common distributed failures</h3>
+          <div class="failure"><div class="mark">01</div><div><b>Rank desynchronization</b><p>A timeout is often a downstream symptom. Find the first rank that stopped entering collectives.</p></div></div>
+          <div class="failure"><div class="mark">02</div><div><b>Topology mismatch</b><p>Logical process groups span slow links because rank placement ignored physical locality.</p></div></div>
+          <div class="failure"><div class="mark">03</div><div><b>Queue coupling</b><p>One workload class consumes capacity needed by another, so head-of-line blocking becomes an SLO outage.</p></div></div>
+          <div class="failure"><div class="mark">04</div><div><b>Silent imbalance</b><p>Average utilization is high but useful work is gated by one pipeline stage or expert rank.</p></div></div>
+        </div>
+        <article class="card">
+          <div class="label">Minimum useful telemetry</div><h3>Trace the request path</h3>
+          <ul><li>Ingress queue and admission delay</li><li>Prefill queue, execution, and chunk count</li><li>KV bytes, handoff time, source → destination</li><li>Decode queue, active sequences, tokens/step</li><li>Collective duration by operation and process group</li><li>Per-rank compute, memory, network, and clock health</li><li>Per-layer expert load distribution and overflow</li></ul>
+          <div class="callout" style="margin-bottom:0"><strong>Measure percentiles per phase</strong>A p99 endpoint number tells you a user is unhappy. Phase spans tell you where to look.</div>
+        </article>
+      </div>
+    </div></section>
+
+    <section id="lab"><div class="wrap">
+      <div class="section-head"><div class="num">07 / 08</div><div><h2>Lab: prove the network ceiling</h2><p>Run a small collective benchmark, compare predicted transfer time with measured latency, and write a topology recommendation. The goal is explanation, not a pretty number.</p></div></div>
+      <div class="steps">
+        <article><div><h3>Choose two process layouts</h3><p>Layout A keeps the collective within one node. Layout B spans two nodes. Use the same world size and message sizes if the hardware permits; otherwise record the difference explicitly.</p></div></article>
+        <article><div><h3>Sweep payload size</h3><p>Measure small payloads to expose launch and network latency, then larger payloads to approach bandwidth limits. Warm up before recording samples.</p></div></article>
+        <article><div><h3>Predict, measure, explain</h3><p>Estimate a lower bound from bytes ÷ link bandwidth. The gap to measured time contains protocol overhead, topology effects, contention, and synchronization skew.</p></div></article>
+        <article><div><h3>Translate to serving</h3><p>Estimate how often the target model invokes that collective per generated token. Convert microbenchmark time into an approximate per-token communication budget.</p></div></article>
+      </div>
+      <div class="grid-2" style="margin-top:28px">
+        <div>
+          <h3>Minimal PyTorch probe</h3>
+          <div class="codebox"><button class="copy" data-copy="probe">Copy</button><code id="probe"># launched under torchrun
+import os, time, torch
+import torch.distributed as dist
+
+dist.init_process_group("nccl")
+rank = dist.get_rank()
+torch.cuda.set_device(int(os.environ["LOCAL_RANK"]))
+
+for mib in [1, 4, 16, 64, 256]:
+    n = mib * 1024 * 1024 // 2  # fp16 elements
+    x = torch.ones(n, device="cuda", dtype=torch.float16)
+    for _ in range(10):
+        dist.all_reduce(x)
+    torch.cuda.synchronize()
+    t0 = time.perf_counter()
+    for _ in range(50):
+        dist.all_reduce(x)
+    torch.cuda.synchronize()
+    ms = (time.perf_counter() - t0) * 1000 / 50
+    if rank == 0:
+        print(f"{mib:>3} MiB  {ms:8.3f} ms")
+
+dist.destroy_process_group()</code></div>
+        </div>
+        <div>
+          <h3>Launch pattern</h3>
+          <div class="codebox"><button class="copy" data-copy="launch">Copy</button><code id="launch"># node 0
+MASTER_ADDR=&lt;node0-ip&gt; MASTER_PORT=29500 \
+torchrun --nnodes=2 --nproc-per-node=8 \
+  --node-rank=0 probe.py
+
+# node 1: same command, but --node-rank=1</code></div>
+          <div class="callout"><strong>Before running</strong>Use only a cluster you are authorized to use. Confirm matching software stacks and firewall rules. Record GPU, NIC, topology, and workload occupancy alongside results.</div>
+        </div>
+      </div>
+      <article class="card" style="margin-top:26px"><div class="label">Deliverable</div><h3>One-page architecture defense</h3><p>State the chosen TP/PP/DP/EP layout, draw its process groups onto the physical topology, estimate communication per token, identify the first expected bottleneck, and name the metric that would falsify your assumption.</p></article>
+    </div></section>
+
+    <section id="check"><div class="wrap">
+      <div class="section-head"><div class="num">08 / 08</div><div><h2>Knowledge check</h2><p>Choose the best answer. Explanations appear immediately; nothing is saved.</p></div></div>
+      <div class="quiz" id="quiz">
+        <div class="q" data-answer="1"><p>1. A model fits on one 8-GPU node. You need 4× throughput for independent requests. What is the cleanest first move?</p><div class="answers"><button>Increase tensor parallelism across four nodes</button><button>Deploy four data-parallel replicas</button><button>Add four pipeline stages</button></div><p class="explain">Data parallelism scales independent request throughput without adding per-token collectives, provided each replica fits.</p></div>
+        <div class="q" data-answer="2"><p>2. In a disaggregated design, prefill completes quickly but TTFT spikes when decode is busy. What is missing?</p><div class="answers"><button>More expert capacity factor</button><button>A larger tensor-parallel group</button><button>Decode reservation and ingress backpressure</button></div><p class="explain">Producing KV state without a destination creates stranded work. Reserve decode capacity before or during prefill and throttle admission.</p></div>
+        <div class="q" data-answer="0"><p>3. Average expert utilization is balanced, yet p99 latency spikes. What should you inspect next?</p><div class="answers"><button>Per-layer, per-rank expert load histograms</button><button>Only total GPU utilization</button><button>The global mean tokens per expert</button></div><p class="explain">Short correlated bursts at one layer or rank can stall all-to-all collectives while global averages remain healthy.</p></div>
+        <div class="q" data-answer="1"><p>4. Why keep tensor-parallel groups within an NVLink island?</p><div class="answers"><button>It reduces model parameter count</button><button>TP performs frequent latency-sensitive collectives</button><button>NVLink removes all synchronization</button></div><p class="explain">TP communicates inside many layers. Fast, low-latency local links reduce this recurring critical-path cost; synchronization still exists.</p></div>
+      </div>
+      <div class="score" id="score">0 / 4 answered correctly</div>
+    </div></section>
+  </main>
+
+  <footer class="finish"><div class="wrap"><div class="finish-box">
+    <div><div class="stage">Stage 09 complete when…</div><h2>You can defend the topology, not just launch it.</h2><p>A production design is an argument about placement, traffic, queueing, and failure domains. Flags are implementation details.</p></div>
+    <ul class="check"><li>Parallel axes map to physical links</li><li>KV movement has a bounded budget</li><li>Expert skew is observable</li><li>Backpressure has a clear owner</li><li>One metric can falsify each assumption</li></ul>
+  </div></div></footer>
+
+  <script>
+    (function(){
+      var progress=document.getElementById('progress');
+      function onScroll(){var d=document.documentElement;var max=d.scrollHeight-d.clientHeight;progress.style.width=(max?d.scrollTop/max*100:0)+'%'}
+      addEventListener('scroll',onScroll,{passive:true});onScroll();
+
+      var fabricData={
+        nv:{name:'High-bandwidth node-local switching',text:'Best home for fine-grained tensor-parallel collectives. Keep chatty all-reduces inside the node whenever possible.',color:'#39c7c0'},
+        ib:{name:'Scale-out RDMA fabric between nodes',text:'Use for coarser communication: pipeline boundaries, replica routing, or carefully sized expert and KV transfers. Topology and contention now matter more.',color:'#ff8054'},
+        pcie:{name:'Host-attached fallback path',text:'Useful for device I/O and smaller systems, but easy to oversubscribe through shared roots. Validate peer-to-peer paths rather than assuming them.',color:'#f0bc4d'}
+      };
+      document.querySelectorAll('[data-fabric]').forEach(function(b){b.addEventListener('click',function(){
+        document.querySelectorAll('[data-fabric]').forEach(function(x){x.setAttribute('aria-pressed','false')});b.setAttribute('aria-pressed','true');
+        var d=fabricData[b.dataset.fabric];document.getElementById('fabricName').textContent=d.name;document.getElementById('fabricText').textContent=d.text;document.getElementById('gpuGrid').style.setProperty('--link-color',d.color);
+      })});
+
+      function fmt(n){return Math.round(n).toLocaleString()}
+      function calculate(){var t=Math.max(1,+document.getElementById('tokens').value||1),k=Math.max(1,+document.getElementById('topk').value||1),e=Math.max(1,+document.getElementById('experts').value||1),f=Math.max(1,+document.getElementById('factor').value||1);var a=t*k,avg=a/e,cap=Math.ceil(avg*f);document.getElementById('assignments').textContent=fmt(a);document.getElementById('average').textContent=avg.toFixed(avg%1?1:0);document.getElementById('capacity').textContent=fmt(cap);document.getElementById('headroom').textContent=Math.round((f-1)*100)+'%'}
+      document.getElementById('calculate').addEventListener('click',calculate);
+
+      document.querySelectorAll('.copy').forEach(function(btn){btn.addEventListener('click',function(){var el=document.getElementById(btn.dataset.copy);navigator.clipboard.writeText(el.innerText).then(function(){var old=btn.textContent;btn.textContent='Copied';setTimeout(function(){btn.textContent=old},1200)}).catch(function(){btn.textContent='Select text'})})});
+
+      var correct=0,answered=0;
+      document.querySelectorAll('.q').forEach(function(q){var buttons=q.querySelectorAll('.answers button');buttons.forEach(function(btn,i){btn.addEventListener('click',function(){if(q.dataset.done)return;q.dataset.done='1';answered++;if(i===+q.dataset.answer){btn.classList.add('correct');correct++}else{btn.classList.add('wrong');buttons[+q.dataset.answer].classList.add('correct')}buttons.forEach(function(x){x.disabled=true});q.querySelector('.explain').classList.add('show');document.getElementById('score').textContent=correct+' / 4 answered correctly · '+answered+' attempted'})})});
+    })();
+  </script>
+</body>
+</html>
