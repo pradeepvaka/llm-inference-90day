@@ -17,7 +17,7 @@ Course index (Google Doc): https://docs.google.com/document/d/1nnmtDFpOQDeUurNA9
 | 7 | Speculative Decoding and Parallelism | https://muse.ai/s/stage-7-speculative-decoding-and-xlxj6axlmxcjzx0xx | stage-07-speculative-decoding-and-parallelism.html |
 | 8 | Kernel-Level Optimization | https://muse.ai/s/stage-8-kernel-level-optimization-cw6exujxvxvfhxe | stage-08-kernel-level-optimization.html |
 | 9 | Distributed Inference | https://muse.ai/s/stage-9-distributed-inference-ixo6kmxcgjxru8 | stage-09-distributed-inference.html |
-| 10 | Autoscaling and Economics | coming Sept 27 | — |
+| 10 | Autoscaling and Economics | https://muse.ai/s/stage-10-autoscaling-and-economics-pz6lnpxj38xhh | stage-10-autoscaling-and-economics.html |
 | 11 | Gateway, Routing, and Reliability | coming Sept 28 | — |
 | 12 | Portfolio and Benchmarks | coming Sept 29 | — |
 

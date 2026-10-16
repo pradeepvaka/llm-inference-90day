@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>Stage 10: Autoscaling and Economics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ef; --paper:#fffdf8; --ink:#16130e; --muted:#6b6255; --line:#e4ddd0;
+  --accent:#c2410c; --accent2:#0f766e; --gold:#b45309; --card:#ffffff;
+  --chip:#fff1e6; --good:#15803d; --warn:#b45309; --bad:#b91c1c;
+  --code-bg:#14110d; --code-ink:#fde68a;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0f0e0c;--paper:#171512;--ink:#f5f0e6;--muted:#a89f92;--line:#2e2a24;--card:#1c1a17;--chip:#2a1e12;--code-bg:#0a0908}
+}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.6}
+a{color:var(--accent)}
+.topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-inner{max-width:1120px;margin:0 auto;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.topbar-inner span:last-child{color:var(--accent);text-transform:none;letter-spacing:0}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px 64px}
+.hero{padding:42px 0 28px;display:grid;grid-template-columns:1.35fr .65fr;gap:28px}
+@media(max-width:760px){.hero{grid-template-columns:1fr}}
+.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:800}
+h1{font-family:Fraunces,serif;font-size:clamp(42px,7vw,72px);line-height:.92;margin:12px 0 16px;letter-spacing:-.02em}
+h1 em{color:var(--accent);font-style:normal}
+.lede{font-size:18px;color:var(--muted);max-width:640px}
+.hero-card{background:var(--ink);color:#fff8ec;border-radius:18px;padding:22px}
+.hero-card h3{margin:0 0 14px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24}
+.hero-card dl{margin:0;display:grid;gap:12px}
+.hero-card dt{font-size:12px;opacity:.7;text-transform:uppercase;letter-spacing:.08em}
+.hero-card dd{margin:2px 0 0;font-weight:800;font-size:18px;line-height:1.2}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:8px 0 28px}
+@media(max-width:760px){.stats{grid-template-columns:1fr 1fr}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.stat b{font-size:28px;display:block;line-height:1}
+.stat span{font-size:13px;color:var(--muted)}
+.nav{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 28px}
+.nav a{font-size:13px;font-weight:700;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);padding:8px 12px;border-radius:999px}
+section{margin:38px 0}
+.sec-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px}
+.num{flex:0 0 auto;width:44px;height:44px;border-radius:50%;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.sec-head h2{font-family:Fraunces,serif;font-size:32px;line-height:1;margin:4px 0 6px}
+.sec-head p{margin:0;color:var(--muted);max-width:720px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+.card h3{margin:0 0 8px;font-size:17px}
+.card p,.card li{color:var(--muted);font-size:15px}
+.card ul{margin:8px 0 0;padding-left:18px}
+.callout{border-left:4px solid var(--accent2);background:var(--paper);padding:16px 18px;border-radius:0 12px 12px 0}
+.callout strong{color:var(--accent2)}
+code,pre{font-family:"IBM Plex Mono",monospace}
+pre{background:var(--code-bg);color:var(--code-ink);padding:18px;border-radius:14px;overflow:auto;font-size:13px;line-height:1.55;white-space:pre-wrap}
+pre .c{color:#a8a29e} pre .k{color:#fda4af} pre .s{color:#86efac}
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--chip);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+tr:last-child td{border-bottom:none}
+.tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:4px 7px;border-radius:999px;background:var(--chip);color:var(--accent)}
+.lab{border:1px dashed var(--accent);background:var(--paper)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+label{font-size:13px;font-weight:700;display:block;margin-top:14px}
+label output{float:right;color:var(--accent)}
+.calc-result{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:18px}
+@media(max-width:600px){.calc-result{grid-template-columns:1fr}}
+.calc-result div{background:var(--ink);color:white;border-radius:12px;padding:14px}
+.calc-result b{font-size:22px;display:block}
+.calc-result span{font-size:12px;opacity:.75;text-transform:uppercase;letter-spacing:.06em}
+canvas{width:100%;height:220px;background:var(--paper);border:1px solid var(--line);border-radius:12px}
+input[type=number],select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit}
+.btn{margin-top:16px;background:var(--accent);color:white;border:none;padding:11px 16px;border-radius:999px;font-weight:800;cursor:pointer}
+.timeline{display:grid;gap:0}
+.step{display:grid;grid-template-columns:110px 1fr 70px;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
+@media(max-width:600px){.step{grid-template-columns:1fr}}
+.step b{color:var(--accent)}
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+details+details{margin-top:10px}
+summary{font-weight:800;cursor:pointer}
+footer{border-top:1px solid var(--line);padding:24px 0;color:var(--muted);font-size:14px}
+.formula{background:#fff7ed;border:1px solid #fed7aa;color:#431407;border-radius:12px;padding:16px;font-family:"IBM Plex Mono",monospace;font-size:14px}
+@media(prefers-color-scheme:dark){.formula{background:#21150a;color:#ffedd5;border-color:#7c2d12}}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner"><span>LLM Inference Mastery · 90-Day Program</span><span>Stage 10 of 12</span></div></header>
+<div class="wrap">
+
+<div class="hero">
+  <div>
+    <div class="eyebrow">Autoscaling &amp; Economics</div>
+    <h1>Scale the queue.<br>Not the <em>bill.</em></h1>
+    <p class="lede">A GPU that sits idle is burning money. A GPU that queues too long is burning users. Stage 10 is where inference stops being a model problem and becomes a control-systems + unit-economics problem: KEDA, cold starts, spot capacity, cost per token, and MFU.</p>
+    <div class="nav">
+      <a href="#keda">1 · KEDA</a><a href="#cold">2 · Cold starts</a><a href="#spot">3 · Spot GPUs</a><a href="#cost">4 · Cost / token</a><a href="#mfu">5 · MFU</a><a href="#labs">Labs</a>
+    </div>
+  </div>
+  <aside class="hero-card">
+    <h3>By the end you can defend</h3>
+    <dl>
+      <div><dt>Scaling signal</dt><dd>Why queue depth beats CPU &amp; raw RPS for LLM</dd></div>
+      <div><dt>Unit economics</dt><dd>Cost per 1M tokens from first principles</dd></div>
+      <div><dt>Utilization</dt><dd>MFU, goodput &amp; why 100% util can be bad</dd></div>
+      <div><dt>Trade-off</dt><dd>Latency vs. cost vs. interruption risk</dd></div>
+    </dl>
+  </aside>
+</div>
+
+<div class="stats">
+  <div class="stat"><b>~60–180s</b><span>Typical LLM cold start total — stages overlap in practice; worst-case sum is far higher. Model load dominates</span></div>
+  <div class="stat"><b>40–55%</b><span>Healthy MFU range for large training; inference decode is usually far lower &amp; memory-bound</span></div>
+  <div class="stat"><b>60–80%</b><span>Possible spot discount vs on-demand — price varies by region, GPU &amp; demand</span></div>
+  <div class="stat"><b>Queue &gt; CPU</b><span>Best autoscaling signal: waiting requests + running batch pressure</span></div>
+</div>
+
+<div class="callout"><strong>The core tension:</strong> Prefill is compute-bound, decode is memory-bandwidth-bound, batching improves throughput but hurts latency, and autoscaling is slow because new GPUs are slow to become useful. Every design in this stage is a way to manage that mismatch — not eliminate it.</div>
+
+<!-- KEDA -->
+<section id="keda">
+  <div class="sec-head"><div class="num">1</div><div><h2>Queue-based scaling with KEDA</h2><p>KEDA (Kubernetes Event-Driven Autoscaling) scales workloads from external signals — queue length, Prometheus metrics, Kafka lag — including scale-to-zero. For LLMs, the queue <em>is</em> the demand signal.</p></div></div>
+
+  <div class="grid2">
+    <div class="card"><h3>Why CPU / RPS autoscaling fails for LLMs</h3><ul><li><strong>CPU is idle while GPU is saturated.</strong> HPA on CPU scales the wrong resource.</li><li><strong>Requests are not equal.</strong> A 128-token chat and a 32k-context summarization differ by 100× in work.</li><li><strong>Latency is non-linear.</strong> At high batch / KV-cache pressure, one extra request can push everyone past SLO.</li><li><strong>Startup is slow.</strong> By the time RPS triggers a scale-up and the pod is warm, the burst may be gone — or the queue has exploded.</li></ul></div>
+    <div class="card"><h3>What to scale on instead</h3><ul><li><strong>Waiting queue depth</strong> — requests waiting in vLLM / TGI / router.</li><li><strong>Running + waiting</strong> relative to <code>max_num_seqs</code>.</li><li><strong>KV-cache utilization</strong> — near-full cache = preemptions coming.</li><li><strong>Tokens in queue</strong> (prompt tokens queued) — better than request count when lengths vary.</li><li><strong>Time-to-first-token (TTFT) p95</strong> as a guardrail, not the primary trigger — it's lagging.</li></ul></div>
+  </div>
+
+  <h3 style="margin:22px 0 8px">A production-shaped KEDA ScaledObject (vLLM on Prometheus)</h3>
+  <pre><span class="c"># Scale on queue depth exposed by vLLM's /metrics endpoint</span>
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata: { name: <span class="s">llm-inference</span> }
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: vllm }
+  minReplicaCount: <span class="k">1</span>      <span class="c"># 0 = scale-to-zero; keep 1 if cold start &gt; SLO allows</span>
+  maxReplicaCount: <span class="k">12</span>
+  pollingInterval: <span class="k">15</span>     <span class="c"># seconds — faster polling ≠ faster GPUs</span>
+  cooldownPeriod: <span class="k">300</span>     <span class="c"># 5 min: avoid flapping when a GPU costs this much</span>
+  triggers:
+  - type: prometheus
+    metadata:
+      serverAddress: http://prometheus:9090
+      query: |
+        sum(vllm:num_requests_waiting) /
+        clamp_min(sum(vllm:num_requests_running), 1)
+      threshold: <span class="s">"2"</span>   <span class="c"># scale when waiting ≈ 2× running capacity pressure</span></pre>
+  <p style="color:var(--muted);font-size:14px">Tune the threshold from load tests, not intuition. Pair KEDA (replica count) with a smart router (least-loaded / KV-aware routing) — scaling without good routing just creates more unevenly loaded pods.</p>
+
+  <div class="card" style="margin-top:18px">
+    <h3>🧪 Interactive: queue vs. replicas — feel Little's Law</h3>
+    <p>Little's Law: <code>L = λ × W</code> — queue length = arrival rate × time in system. If arrivals exceed service capacity, the queue doesn't stabilize, it grows without bound. Drag arrival rate past capacity and watch.</p>
+    <label>Arrival rate λ — requests / min <output id="arrOut">42</output></label>
+    <input type="range" id="arr" min="5" max="90" value="42">
+    <label>Throughput per replica — req / min <output id="svcOut">12</output></label>
+    <input type="range" id="svc" min="4" max="30" value="12">
+    <label>Replicas <output id="repOut">4</output></label>
+    <input type="range" id="rep" min="1" max="10" value="4">
+    <canvas id="queueChart" width="900" height="220" aria-label="Queue depth simulation chart"></canvas>
+    <div class="calc-result">
+      <div><span>Total capacity</span><b id="capOut">48 /min</b></div>
+      <div><span>Utilization ρ = λ / capacity</span><b id="rhoOut">88%</b></div>
+      <div><span>Verdict</span><b id="verdictOut" style="font-size:16px">Tight — small burst queues</b></div>
+    </div>
+    <p style="font-size:13px">Rule of thumb: keep ρ below ~0.7 for latency-sensitive serving. Queueing delay explodes as ρ → 1 — at ρ=0.9 average wait is ~9× service time; at ρ=0.99 it's ~99×. Headroom <em>is</em> the latency budget.</p>
+  </div>
+</section>
+
+<!-- COLD STARTS -->
+<section id="cold">
+  <div class="sec-head"><div class="num">2</div><div><h2>Cold starts: anatomy &amp; mitigation</h2><p>A cold start isn't one delay — it's a pipeline of delays, and for LLMs the model, not the container, is most of it.</p></div></div>
+  <div class="card">
+    <div class="timeline">
+      <div class="step"><b>1 · Provision</b><span>Cloud creates / schedules the GPU node. Spot or scarce GPUs can wait minutes or fail outright.</span><span>5–120s+</span></div>
+      <div class="step"><b>2 · Image pull</b><span>CUDA + PyTorch + server image is often 10–20 GB. Cached node = seconds; cold node = minutes.</span><span>10–90s</span></div>
+      <div class="step"><b>3 · Model load</b><span>Weights from disk / object store → CPU RAM → GPU HBM. A 70B in FP16 is ~140 GB to move.</span><span>20–120s</span></div>
+      <div class="step"><b>4 · Engine init</b><span>CUDA graphs capture, KV-cache allocation, tokenizer, compilation (torch.compile / Triton).</span><span>10–60s</span></div>
+      <div class="step"><b>5 · Warmup</b><span>Dummy requests so the first real user doesn't pay JIT / graph / cache warm-up.</span><span>2–15s</span></div>
+    </div>
+    <p style="font-size:13px;color:var(--muted)">Ranges are illustrative per-stage extremes — they don't sum to the typical total because stages overlap (e.g. image pull while node provisions) and best cases rarely stack. Typical measured totals land around 60–180s. Measure your own stack with timestamps at each stage.</p>
+  </div>
+  <div class="grid3" style="margin-top:16px">
+    <div class="card"><span class="tag">Cheapest</span><h3>Keep a warm floor</h3><p><code>minReplicaCount: 1–2</code>. Costs money 24/7, but removes cold start from the common path. Right answer for steady, SLO-bound traffic.</p></div>
+    <div class="card"><span class="tag">Predictive</span><h3>Scale before the burst</h3><p>Cron / forecast-based KEDA triggers for known peaks (9am, product launch). Scaling on schedule beats scaling on pain.</p></div>
+    <div class="card"><span class="tag">Technical</span><h3>Shrink the load itself</h3><p>Smaller / quantized weights, fast local NVMe or streamed loading, pre-pulled images on node pools, lazy CUDA-graph capture, snapshot/restore where supported.</p></div>
+  </div>
+  <div class="callout" style="margin-top:16px"><strong>Scale-to-zero is a pricing feature, not an SLO feature.</strong> It's excellent for dev, batch, and spiky internal tools. For user-facing chat, the first request after idle pays the full cold start — say that out loud in design review before choosing it.</div>
+</section>
+
+<!-- SPOT -->
+<section id="spot">
+  <div class="sec-head"><div class="num">3</div><div><h2>Spot GPUs: cheap, until they're gone</h2><p>Spot / preemptible GPUs are spare cloud capacity sold at a steep discount — reclaimable on short notice (often ~30s–2 min warning, provider-dependent). Design for interruption; don't hope it won't happen.</p></div></div>
+  <div style="overflow-x:auto"><table>
+    <tr><th>Workload</th><th>Spot fit</th><th>Why</th></tr>
+    <tr><td>Batch inference, embeddings, evals</td><td><strong style="color:var(--good)">Excellent</strong></td><td>Idempotent, retryable, checkpointable; throughput matters, per-request latency doesn't.</td></tr>
+    <tr><td>Offline fine-tuning with checkpointing</td><td><strong style="color:var(--good)">Good</strong></td><td>Resume from checkpoint; save often enough that lost work &lt; checkpoint cost.</td></tr>
+    <tr><td>Dev / staging, load tests</td><td><strong style="color:var(--good)">Good</strong></td><td>Interruption is an inconvenience, not an incident.</td></tr>
+    <tr><td>Latency-SLO chat (sole capacity)</td><td><strong style="color:var(--bad)">Poor</strong></td><td>A reclaim during peak = queue spike + cold starts on replacement capacity simultaneously.</td></tr>
+    <tr><td>Chat with on-demand fallback fleet</td><td><strong style="color:var(--warn)">Viable hybrid</strong></td><td>Spot carries base load; router drains to on-demand on interruption signal. Complexity is the cost.</td></tr>
+  </table></div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card"><h3>Interruption survival checklist</h3><ul><li>Listen for the termination notice; stop accepting new requests immediately (drain, don't drop).</li><li>Make requests idempotent / retryable at the router with a deadline budget.</li><li>Diversify: multiple instance types &amp; zones — one pool reclaiming shouldn't take the fleet.</li><li>Keep the on-demand floor sized for your SLO, not for average load.</li></ul></div>
+    <div class="card"><h3>The real spot equation</h3><p>Effective saving = discount − (wasted partial work + re-queue latency + fallback premium + engineering complexity). If interruptions hit 10% of capacity-hours at peak, a headline “70% off” can net far less. Measure <em>cost per completed token on spot</em>, not the sticker price.</p></div>
+  </div>
+</section>
+
+<!-- COST PER TOKEN -->
+<section id="cost">
+  <div class="sec-head"><div class="num">4</div><div><h2>Cost per token: the unit that runs the business</h2><p>Every pricing page, capacity plan, and model-choice argument reduces to this. Derive it, don't quote it.</p></div></div>
+  <div class="formula">cost per 1M output tokens = (GPU $/hr ÷ 3600) ÷ (tokens/sec × utilization) × 1,000,000</div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h3>Worked example</h3>
+      <p>One H100 at <strong>$3.00/hr</strong> (illustrative), serving at <strong>1,200 tok/s</strong> aggregate decode throughput, at <strong>50% realized utilization</strong>:</p>
+      <ul><li>Effective throughput = 1,200 × 0.50 = 600 tok/s</li><li>Tokens per hour = 600 × 3,600 = 2.16M</li><li>Cost per 1M tokens = $3.00 ÷ 2.16 = <strong>$1.39</strong></li><li>At 25% utilization it doubles to $2.78. <em>Utilization is the price.</em></li></ul>
+      <p style="font-size:13px">Input/prefill tokens, idle time, non-GPU costs (CPU, storage, egress, observability) and failed requests all belong in a full accounting — this formula is the floor.</p>
+    </div>
+    <div class="card">
+      <h3>🧮 Cost-per-token calculator</h3>
+      <label>GPU price — $ / hour <output id="priceOut">$3.00</output></label>
+      <input type="range" id="price" min="0.5" max="12" step="0.25" value="3">
+      <label>Aggregate throughput — tok / s <output id="tpsOut">1200</output></label>
+      <input type="range" id="tps" min="100" max="5000" step="50" value="1200">
+      <label>Realized utilization <output id="utilOut">50%</output></label>
+      <input type="range" id="util" min="5" max="95" value="50">
+      <div class="calc-result" style="grid-template-columns:1fr 1fr">
+        <div><span>Cost / 1M tokens</span><b id="cptOut">$1.39</b></div>
+        <div><span>Tokens / $1</span><b id="tpdOut">720k</b></div>
+      </div>
+    </div>
+  </div>
+  <div class="callout" style="margin-top:16px"><strong>Levers, in usual order of impact:</strong> ① raise utilization (batching, continuous batching, better routing) ② pick the right-sized model (a smaller model that's “good enough” is often 5–10× cheaper per token) ③ quantize (FP8 / INT4 — verify quality) ④ cheaper capacity (spot, committed-use discounts) ⑤ reduce wasted tokens (prompt caching, shorter outputs, stopping rules).</div>
+</section>
+
+<!-- MFU -->
+<section id="mfu">
+  <div class="sec-head"><div class="num">5</div><div><h2>MFU: how much of the GPU are you actually using?</h2><p>Model FLOPs Utilization = observed FLOPs/sec ÷ peak hardware FLOPs/sec. It's the standard yardstick for training efficiency — and a useful, but easily misread, lens for inference.</p></div></div>
+  <div class="formula">MFU = (6 × N_params × tokens/sec) ÷ peak_FLOPs &nbsp;·&nbsp; [training approx: forward+backward ≈ 6 FLOPs / param / token]</div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card"><h3>Reading MFU honestly</h3><ul><li><strong>Training:</strong> 40–55% is strong for large dense models; communication, memory stalls, and small per-device batches eat the rest.</li><li><strong>Inference prefill:</strong> compute-bound, can reach respectable MFU at large batch.</li><li><strong>Inference decode:</strong> one token at a time per sequence, dominated by reading weights from HBM — MFU is inherently low. Low decode MFU ≠ badly tuned; check <em>memory bandwidth utilization</em> and tokens/sec instead.</li><li>MFU ignores data type: quote it with precision (BF16 vs FP8 peaks differ ~2×).</li></ul></div>
+    <div class="card"><h3>🧮 MFU estimator (training-style)</h3>
+      <label>Model size — billions of params <output id="npOut">70B</output></label>
+      <input type="range" id="np" min="1" max="405" value="70">
+      <label>Throughput — tokens / sec (fleet) <output id="mtpsOut">7500</output></label>
+      <input type="range" id="mtps" min="500" max="200000" step="500" value="7500">
+      <label>GPUs in fleet <output id="ngpuOut">8</output></label>
+      <input type="range" id="ngpu" min="1" max="64" value="8">
+      <p style="font-size:13px">Assumes H100 BF16 peak ≈ 989 TFLOPS / GPU.</p>
+      <div class="calc-result" style="grid-template-columns:1fr 1fr">
+        <div><span>Observed</span><b id="obsOut">—</b></div>
+        <div><span>MFU</span><b id="mfuOut">—</b></div>
+      </div>
+      <p id="mfuWarn" style="display:none;color:var(--bad);font-weight:700;font-size:13px">⚠ MFU &gt; 100% is impossible — these inputs are inconsistent (throughput too high for this model / fleet size, or peak assumption wrong). Lower throughput or add GPUs.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px"><h3>Goodput &gt; utilization</h3><p>The metric executives should ask for is <strong>goodput</strong>: tokens (or requests) completed <em>within SLO</em> per dollar. A fleet at 95% utilization with p99 TTFT blowing the SLO has worse goodput than one at 65% that meets every deadline. Optimize goodput; report utilization as a diagnostic, never as the goal.</p></div>
+</section>
+
+<!-- LABS -->
+<section id="labs">
+  <div class="sec-head"><div class="num">6</div><div><h2>Hands-on labs</h2><p>Each lab ends with a number you can defend on a whiteboard. Tag: <span class="tag">PoC — speed over polish</span></p></div></div>
+  <div class="grid3">
+    <div class="card lab"><h3>Lab A — KEDA load test</h3><p>Deploy vLLM + KEDA with the ScaledObject above. Drive load at 0.5×, 0.9×, and 1.3× single-replica capacity.</p><ul><li>Record: time from trigger → new pod <em>serving</em> (not just Running)</li><li>Plot queue depth vs. replicas</li><li>Deliverable: the threshold you'd ship, and why</li></ul></div>
+    <div class="card lab"><h3>Lab B — Cold-start autopsy</h3><p>Instrument each cold-start stage with timestamps across 10 scale-from-zero events.</p><ul><li>Which stage dominates? Does it match your guess?</li><li>Apply one mitigation, re-measure</li><li>Deliverable: before/after waterfall + $ cost of a warm floor</li></ul></div>
+    <div class="card lab"><h3>Lab C — Cost audit</h3><p>Take one model you serve (or benchmark). Fill the cost formula with <em>measured</em> throughput and utilization.</p><ul><li>Compare: on-demand vs spot vs smaller/quantized model</li><li>Deliverable: a one-page cost-per-1M-tokens table with assumptions stated</li></ul></div>
+  </div>
+
+  <h3 style="margin:24px 0 10px">Check yourself</h3>
+  <details><summary>Traffic doubles in 60 seconds. KEDA is configured perfectly. Why do users still see timeouts?</summary><p style="color:var(--muted)">Because replica creation isn't capacity — the new GPU must provision, pull, load the model, and warm up (often 60–180s+). During that window the existing fleet absorbs 2× load, queues grow super-linearly (ρ→1), and timeouts cascade. Mitigations: warm floor, predictive scaling, request shedding / admission control, and a router that protects in-flight work.</p></details>
+  <details><summary>Spot is 70% cheaper. Your batch job's cost only fell 30%. Where did the rest go?</summary><p style="color:var(--muted)">Interruptions waste partial work, checkpoints cost time and storage, replacement capacity may come up at worse prices or not at all, and retries duplicate compute. Measure cost per <em>completed</em> job — sticker discount minus waste is the real discount.</p></details>
+  <details><summary>Decode MFU is 4%. Is the serving stack broken?</summary><p style="color:var(--muted)">Probably not. Decode is memory-bandwidth-bound: each token requires streaming the model's weights from HBM, so FLOPs sit idle waiting on memory. Judge decode by tokens/sec, memory-bandwidth utilization, and goodput — and raise effective throughput with continuous batching so weight reads are amortized across many sequences.</p></details>
+
+  <div class="card" style="margin-top:20px"><h3>Production checklist — Stage 10 sign-off</h3><ul>
+    <li>Autoscaling signal is queue / KV pressure, not CPU</li>
+    <li>Cooldown &amp; warm floor sized from measured cold-start time</li>
+    <li>Cost per 1M tokens computed from measured throughput × utilization</li>
+    <li>Spot used only where interruption is designed for, with an on-demand floor for SLO traffic</li>
+    <li>Dashboard shows goodput (within-SLO tokens/$), queue depth, TTFT p95, and MFU/bandwidth together</li>
+  </ul></div>
+</section>
+
+<footer><strong>Next:</strong> Stage 11 builds on this — observability &amp; SLO operations for the fleet you just learned to scale. &nbsp;·&nbsp; Stage 10 · LLM Inference Mastery · All prices and timings on this page are illustrative examples for calculation practice — measure your own stack before making capacity decisions.</footer>
+</div>
+
+<script>
+(function(){
+  // Queue simulator
+  var arr=document.getElementById('arr'), svc=document.getElementById('svc'), rep=document.getElementById('rep');
+  var canvas=document.getElementById('queueChart'), ctx=canvas.getContext('2d');
+  function draw(){
+    var a=+arr.value, s=+svc.value, r=+rep.value;
+    document.getElementById('arrOut').textContent=a;
+    document.getElementById('svcOut').textContent=s;
+    document.getElementById('repOut').textContent=r;
+    var cap=s*r, rho=a/cap;
+    document.getElementById('capOut').textContent=cap+' /min';
+    document.getElementById('rhoOut').textContent=Math.round(rho*100)+'%';
+    var v=document.getElementById('verdictOut');
+    v.textContent = rho>=1 ? 'Unstable — queue grows forever' : rho>=0.85 ? 'Tight — small burst queues' : rho>=0.6 ? 'Healthy headroom' : 'Over-provisioned — paying for idle';
+    // simulate 60 minutes, queue dynamics per minute
+    var q=0, pts=[];
+    for(var t=0;t<60;t++){
+      var burst = (t>25 && t<35) ? a*0.25 : 0; // mid burst
+      q=Math.max(0, q + (a+burst) - cap);
+      if(rho<1 && t>=35) q=Math.max(0, q - cap*0.15);
+      pts.push(q);
+    }
+    var W=canvas.width, H=canvas.height, max=Math.max(20, Math.max.apply(null,pts)*1.15);
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='#e4ddd0'; ctx.lineWidth=1;
+    for(var i=1;i<4;i++){ ctx.beginPath(); ctx.moveTo(0,H*i/4); ctx.lineTo(W,H*i/4); ctx.stroke(); }
+    ctx.beginPath();
+    pts.forEach(function(p,i){ var x=i/(pts.length-1)*W, y=H-10-(p/max)*(H-30); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.strokeStyle='#c2410c'; ctx.lineWidth=3; ctx.stroke();
+    ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+    ctx.fillStyle='rgba(194,65,12,0.12)'; ctx.fill();
+    ctx.fillStyle='#6b6255'; ctx.font='12px Inter,sans-serif';
+    ctx.fillText('Queue depth over 60 min (with a +25% burst at min 25–35)', 10, 18);
+    ctx.fillText('Peak queue: '+Math.round(Math.max.apply(null,pts))+' requests', 10, H-8);
+  }
+  [arr,svc,rep].forEach(function(el){ el.addEventListener('input',draw); });
+  draw();
+
+  // Cost per token
+  var price=document.getElementById('price'), tps=document.getElementById('tps'), util=document.getElementById('util');
+  function cost(){
+    var p=+price.value, t=+tps.value, u=+util.value/100;
+    document.getElementById('priceOut').textContent='$'+p.toFixed(2);
+    document.getElementById('tpsOut').textContent=t;
+    document.getElementById('utilOut').textContent=Math.round(u*100)+'%';
+    var cpt=(p/3600)/(t*u)*1e6;
+    document.getElementById('cptOut').textContent='$'+cpt.toFixed(2);
+    document.getElementById('tpdOut').textContent=Math.round(1e6/cpt/1000)+'k';
+  }
+  [price,tps,util].forEach(function(el){ el.addEventListener('input',cost); }); cost();
+
+  // MFU
+  var np=document.getElementById('np'), mtps=document.getElementById('mtps'), ngpu=document.getElementById('ngpu');
+  function mfu(){
+    var n=+np.value, t=+mtps.value, g=+ngpu.value;
+    document.getElementById('npOut').textContent=n+'B';
+    document.getElementById('mtpsOut').textContent=t;
+    document.getElementById('ngpuOut').textContent=g;
+    var obs=6*n*1e9*t/1e12; // TFLOPs/s
+    var peak=g*989;
+    var pct=obs/peak*100;
+    document.getElementById('obsOut').textContent=obs.toFixed(0)+' TF/s';
+    document.getElementById('mfuOut').textContent=pct.toFixed(1)+'%';
+    document.getElementById('mfuWarn').style.display = pct>100 ? 'block' : 'none';
+  }
+  [np,mtps,ngpu].forEach(function(el){ el.addEventListener('input',mfu); }); mfu();
+})();
+</script>
+</body>
+</html>
