@@ -19,6 +19,6 @@ Course index (Google Doc): https://docs.google.com/document/d/1nnmtDFpOQDeUurNA9
 | 9 | Distributed Inference | https://muse.ai/s/stage-9-distributed-inference-ixo6kmxcgjxru8 | stage-09-distributed-inference.html |
 | 10 | Autoscaling and Economics | https://muse.ai/s/stage-10-autoscaling-and-economics-pz6lnpxj38xhh | stage-10-autoscaling-and-economics.html |
 | 11 | Gateway, Routing, and Reliability | https://muse.ai/s/stage-11-gateway-routing-and-is6mxmxydjmxixy | stage-11-gateway-routing-and-reliability.html |
-| 12 | Portfolio and Benchmarks | coming Sept 29 | — |
+| 12 | Portfolio and Benchmarks | https://muse.ai/s/stage-12-portfolio-and-benchmarks-xmxk6pfxpfe2p0/GIKwJBbG_S-5kxikN6N9jbBCnb2sTHHVR_UpnkT0_1E | stage-12-portfolio-and-benchmarks.html |
 
 New stages are added here each morning after delivery.

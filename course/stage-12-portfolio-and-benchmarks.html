@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>Stage 12: Portfolio and Benchmarks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ef; --paper:#fffdf8; --ink:#16130e; --muted:#6b6255; --line:#e4ddd0;
+  --accent:#c2410c; --accent2:#0f766e; --gold:#b45309; --card:#ffffff;
+  --chip:#fff1e6; --good:#15803d; --warn:#b45309; --bad:#b91c1c;
+  --code-bg:#14110d; --code-ink:#fde68a;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0f0e0c;--paper:#171512;--ink:#f5f0e6;--muted:#a89f92;--line:#2e2a24;--card:#1c1a17;--chip:#2a1e12;--code-bg:#0a0908}
+}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.6}
+a{color:var(--accent)}
+.topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-inner{max-width:1120px;margin:0 auto;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.topbar-inner span:last-child{color:var(--accent);text-transform:none;letter-spacing:0}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px 64px}
+.hero{padding:42px 0 28px;display:grid;grid-template-columns:1.35fr .65fr;gap:28px}
+@media(max-width:760px){.hero{grid-template-columns:1fr}}
+.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:800}
+h1{font-family:Fraunces,serif;font-size:clamp(42px,7vw,72px);line-height:.92;margin:12px 0 16px;letter-spacing:-.02em}
+h1 em{color:var(--accent);font-style:normal}
+.lede{font-size:18px;color:var(--muted);max-width:660px}
+.hero-card{background:var(--ink);color:#fff8ec;border-radius:18px;padding:22px}
+.hero-card h3{margin:0 0 14px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24}
+.hero-card dl{margin:0;display:grid;gap:12px}
+.hero-card dt{font-size:12px;opacity:.7;text-transform:uppercase;letter-spacing:.08em}
+.hero-card dd{margin:2px 0 0;font-weight:800;font-size:17px;line-height:1.25}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:8px 0 28px}
+@media(max-width:760px){.stats{grid-template-columns:1fr 1fr}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.stat b{font-size:26px;display:block;line-height:1.05}
+.stat span{font-size:13px;color:var(--muted)}
+.nav{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 28px}
+.nav a{font-size:13px;font-weight:700;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);padding:8px 12px;border-radius:999px}
+section{margin:42px 0}
+.sec-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px}
+.num{flex:0 0 auto;width:44px;height:44px;border-radius:50%;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.sec-head h2{font-family:Fraunces,serif;font-size:32px;line-height:1.05;margin:4px 0 6px}
+.sec-head p{margin:0;color:var(--muted);max-width:740px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+.card h3{margin:0 0 8px;font-size:17px}
+.card p,.card li{color:var(--muted);font-size:15px}
+.card ul{margin:8px 0 0;padding-left:18px}
+.callout{border-left:4px solid var(--accent2);background:var(--paper);padding:16px 18px;border-radius:0 12px 12px 0;margin:16px 0}
+.callout strong{color:var(--accent2)}
+.warnbox{border-left:4px solid var(--warn);background:var(--paper);padding:16px 18px;border-radius:0 12px 12px 0;margin:16px 0}
+code,pre{font-family:"IBM Plex Mono",monospace}
+pre{background:var(--code-bg);color:var(--code-ink);padding:18px;border-radius:14px;overflow:auto;font-size:13px;line-height:1.55;white-space:pre-wrap}
+pre .c{color:#a8a29e} pre .k{color:#fda4af} pre .s{color:#86efac}
+.tblwrap{overflow-x:auto;border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:560px}
+th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--chip);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+tr:last-child td{border-bottom:none}
+td.numcell,th.numcell{text-align:right;font-variant-numeric:tabular-nums}
+@media(max-width:640px){
+  table{min-width:0} table,tbody,tr,td{display:block;width:100%}
+  .tblwrap thead{display:none}
+  .tblwrap tr{border-bottom:2px solid var(--line);padding:8px 0}
+  .tblwrap tr:last-child{border-bottom:none}
+  .tblwrap td{border-bottom:none;padding:5px 14px;text-align:left!important}
+  .tblwrap td:first-child{font-size:15px;padding-top:8px;font-weight:700}
+  .tblwrap td::before{content:attr(data-l)" ";font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+  .tblwrap td:first-child::before{content:""}
+}
+.tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:4px 7px;border-radius:999px;background:var(--chip);color:var(--accent)}
+.tag.teal{background:#ccfbf1;color:#115e59}
+@media(prefers-color-scheme:dark){.tag.teal{background:#134e4a;color:#99f6e4}}
+.lab{border:1px dashed var(--accent);background:var(--paper);border-radius:16px;padding:20px}
+.lab h3{margin-top:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+label{font-size:13px;font-weight:700;display:block;margin-top:14px}
+label output{float:right;color:var(--accent)}
+.calc-result{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
+@media(max-width:800px){.calc-result{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.calc-result{grid-template-columns:1fr}}
+.calc-result div{background:var(--ink);color:white;border-radius:12px;padding:14px}
+.calc-result b{font-size:21px;display:block;line-height:1.15}
+.calc-result span{font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.06em}
+canvas{width:100%;height:240px;background:var(--paper);border:1px solid var(--line);border-radius:12px}
+input[type=number],select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;font-size:15px}
+.btn{margin-top:16px;background:var(--accent);color:white;border:none;padding:11px 16px;border-radius:999px;font-weight:800;cursor:pointer;font:inherit;font-size:14px}
+.btn.secondary{background:var(--ink)}
+.btn:active{transform:translateY(1px)}
+.copied{font-size:13px;color:var(--good);font-weight:700;margin-left:10px}
+.timeline{display:grid;gap:0}
+.step{display:grid;grid-template-columns:110px 1fr 110px;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
+@media(max-width:600px){.step{grid-template-columns:1fr}}
+.step b{color:var(--accent)}
+.step span{color:var(--muted)}
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+details+details{margin-top:10px}
+summary{font-weight:800;cursor:pointer}
+details p{color:var(--muted);font-size:15px}
+footer{border-top:1px solid var(--line);padding:24px 0;color:var(--muted);font-size:14px}
+.formula{background:#fff7ed;border:1px solid #fed7aa;color:#431407;border-radius:12px;padding:16px;font-family:"IBM Plex Mono",monospace;font-size:13.5px;line-height:1.7;overflow-x:auto}
+@media(prefers-color-scheme:dark){.formula{background:#21150a;color:#ffedd5;border-color:#7c2d12}}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:6px 0 4px}
+.flow .node{flex:1 1 120px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center;font-size:13px;font-weight:700}
+.flow .node small{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:4px}
+.flow .arr{display:grid;place-items:center;padding:0 6px;color:var(--accent);font-weight:900;font-size:18px}
+@media(max-width:600px){.flow .arr{transform:rotate(90deg)}}
+.checklist{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.checklist li{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px 14px 46px;position:relative;font-size:15px}
+.checklist li::before{content:"";position:absolute;left:16px;top:18px;width:14px;height:14px;border:2px solid var(--accent);border-radius:4px}
+.checklist li b{display:block}
+.checklist li span{color:var(--muted);font-size:14px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.tabs button{font:inherit;font-size:13px;font-weight:800;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.tabs button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.tabpane{display:none}.tabpane.active{display:block}
+.kmetric{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.kmetric:last-child{border-bottom:none}
+.kmetric b{font-variant-numeric:tabular-nums;text-align:right}
+.kmetric span{color:var(--muted)}
+.small{font-size:13px;color:var(--muted)}
+.bar-row{display:grid;grid-template-columns:170px 1fr 74px;gap:10px;align-items:center;font-size:13px;margin:8px 0}
+@media(max-width:560px){.bar-row{grid-template-columns:1fr;gap:2px}}
+.bar-track{height:12px;background:var(--line);border-radius:999px;overflow:hidden}
+.bar-fill{height:100%;background:var(--accent);border-radius:999px}
+.bar-fill.teal{background:var(--accent2)}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner"><span>LLM Inference Mastery · 90-Day Program</span><span>Stage 12 of 12 · Days 82–90 + portfolio</span></div></header>
+<div class="wrap">
+
+<div class="hero">
+  <div>
+    <div class="eyebrow">Portfolio &amp; Benchmarks — the finale</div>
+    <h1>Proof,<br>not <em>claims.</em></h1>
+    <p class="lede">Eleven stages taught you to build inference systems. Stage 12 makes the work legible to everyone else: a self-hosted cluster you can point to, benchmarks published with a methodology you can defend, and kernel writeups that show <em>how</em> you got the numbers. This is the stage a hiring manager, a maintainer, or a future you actually reads.</p>
+    <div class="nav">
+      <a href="#cluster">1 · Self-hosted cluster</a>
+      <a href="#benchmarks">2 · Published benchmarks</a>
+      <a href="#calculator">3 · Benchmark calculator</a>
+      <a href="#cost">4 · Cost per million tokens</a>
+      <a href="#kernels">5 · Kernel writeups</a>
+      <a href="#portfolio">6 · The portfolio</a>
+      <a href="#capstone">7 · Capstone &amp; graduation</a>
+      <a href="#check">Check yourself</a>
+    </div>
+  </div>
+  <aside class="hero-card">
+    <h3>What “done” looks like</h3>
+    <dl>
+      <div><dt>Cluster</dt><dd>A running stack — gateway → engine → GPU — with dashboards, not a diagram</dd></div>
+      <div><dt>Benchmarks</dt><dd>One public report: p50/p99 TTFT &amp; TPOT, tok/s, $/M tokens, repro commands</dd></div>
+      <div><dt>Writeups</dt><dd>2–3 kernel posts with baseline, roofline, and before/after tables</dd></div>
+      <div><dt>Capstone</dt><dd>An open PR to vLLM, SGLang, or Dynamo — benchmarks in the description</dd></div>
+    </dl>
+  </aside>
+</div>
+
+<div class="stats">
+  <div class="stat"><b>128 KB</b><span>KV cache per token — Llama-3.1-8B, fp16. The number that sizes your cluster.</span></div>
+  <div class="stat"><b>≈295</b><span>H100 ridge point (FLOP/byte). Below it you are bandwidth-bound — most of decode lives there.</span></div>
+  <div class="stat"><b>3 runs</b><span>Minimum repetitions for any published number. Mean ± std, never the best run.</span></div>
+  <div class="stat"><b>60 sec</b><span>How long a maintainer spends deciding on your PR. Your benchmarks live in that window.</span></div>
+</div>
+
+<!-- ============ 1 CLUSTER ============ -->
+<section id="cluster">
+  <div class="sec-head"><div class="num">1</div><div>
+    <h2>Build the self-hosted cluster</h2>
+    <p>A portfolio cluster is not a production fleet. It is the smallest honest system that demonstrates the whole discipline: admission, scheduling, KV management, observability, and failure — on hardware you control, with numbers you can reproduce.</p>
+  </div></div>
+
+  <div class="flow" role="img" aria-label="Request path: clients to gateway to router to prefill and decode workers to GPU nodes, with observability alongside">
+    <div class="node">Clients<small>OpenAI SDK / curl / bench harness</small></div><div class="arr">→</div>
+    <div class="node">Gateway<small>Auth · rate limits · routing (Stage 11)</small></div><div class="arr">→</div>
+    <div class="node">Engine replicas<small>vLLM / SGLang — continuous batching, PagedAttention</small></div><div class="arr">→</div>
+    <div class="node">GPU nodes<small>Weights on NVMe · KV in HBM</small></div><div class="arr">→</div>
+    <div class="node">Observability<small>Prometheus · Grafana · structured logs</small></div>
+  </div>
+  <p class="small">Advanced variant (Stage 9 / Day 84): split the engine tier into Dynamo-style prefill and decode pools with KV transfer over NIXL — prefill is compute-bound, decode is bandwidth-bound, and one pool sized for both wastes one resource on every request.</p>
+
+  <div class="grid3">
+    <div class="card"><span class="tag">Tier 0 · Dev</span><h3 style="margin-top:10px">One GPU, everything local</h3>
+      <p>Your workstation or a single cloud GPU. Docker Compose: one vLLM container, Prometheus, Grafana. Purpose: the benchmark harness and kernel labs run here.</p>
+      <ul><li>1× GPU, 24–80 GB (4090 / L4 / A100 / H100)</li><li>Models: 7–8B fp16, or 32–70B quantized</li><li>Good for: correctness, profiling, writeups</li></ul></div>
+    <div class="card"><span class="tag">Tier 1 · Portfolio</span><h3 style="margin-top:10px">Two–four GPUs, real scheduling</h3>
+      <p>The tier you publish numbers from. One node serves, one node generates load — never benchmark a server from itself. Kubernetes or plain systemd + Compose both count; the runbook matters more than the orchestrator.</p>
+      <ul><li>Server node + separate load-gen node</li><li>Gateway in front (Stage 11 patterns)</li><li>Good for: TTFT/TPOT under load, preemption, chunked prefill</li></ul></div>
+    <div class="card"><span class="tag teal">Tier 2 · Burst</span><h3 style="margin-top:10px">Cloud burst, same harness</h3>
+      <p>Rent H100s by the hour to validate that your Tier-1 conclusions scale. The harness, configs, and report format stay identical — only the GPU line in the report changes. Tear down when the run ends; cost discipline is part of the portfolio.</p>
+      <ul><li>Spot/on-demand H100 or A100-80GB</li><li>Same YAML configs, same seeds</li><li>Good for: 70B, tensor parallelism, $/M at scale</li></ul></div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="card"><h3>What every node runs</h3>
+      <ul>
+        <li><b>Engine:</b> vLLM (or SGLang) pinned to an exact version — record it in every report; numbers rot as software changes.</li>
+        <li><b>Weights:</b> local NVMe cache, checksummed. A 70B fp16 download is 140 GB — you do not pull it per deploy.</li>
+        <li><b>Metrics:</b> engine metrics endpoint → Prometheus. The four panels that matter: TTFT p99, TPOT p99, running/waiting requests, KV cache utilization.</li>
+        <li><b>Logs:</b> one JSON line per request — queue wait, prefill ms, decode ms, tokens in/out (your Day 16 log format, now permanent).</li>
+        <li><b>Health:</b> <code>/health</code> + a synthetic canary request every minute; a GPU that answers pings but not tokens is down.</li>
+      </ul></div>
+    <div class="card"><h3>The sizing math you publish with it</h3>
+      <p>Every cluster README earns trust by showing its capacity arithmetic, from Days 8–10:</p>
+      <div class="formula">KV bytes/token = 2 (K,V) × layers × KV heads × head_dim × dtype bytes
+8B fp16: 2 × 32 × 8 × 128 × 2 = 131,072 B = 128 KB/token
+Usable KV memory = HBM − weights − activations − overhead
+Max sequences ≈ usable KV ÷ (128 KB × context length)</div>
+      <p>Worked check, 8B on one 80 GB H100: 16 GB weights leaves ~60 GB for KV → at 4k context (512 MB/sequence) that's roughly 115 concurrent sequences before preemption starts — and your benchmark should show exactly where that wall appears.</p></div>
+  </div>
+
+  <div class="callout"><strong>Whiteboard defense:</strong> for each choice in this stack you should be able to say why — vLLM vs SGLang (scheduler + ecosystem vs radix-tree prefix caching), Compose vs Kubernetes (operational surface you can actually maintain), fp16 vs FP8 weights (accuracy evidence from Stage 6, not vibes). If you can't defend it, simplify it until you can.</div>
+</section>
+
+<!-- ============ 2 BENCHMARKS ============ -->
+<section id="benchmarks">
+  <div class="sec-head"><div class="num">2</div><div>
+    <h2>Publish benchmarks people can trust</h2>
+    <p>Day 82's methodology, made permanent. A benchmark is a claim plus its evidence: fixed setup, one variable at a time, percentiles instead of averages, and the exact commands to reproduce it.</p>
+  </div></div>
+
+  <div class="grid2">
+    <div class="card"><h3>Fix, vary, report</h3>
+      <ul>
+        <li><b>Fix:</b> model + quantization + engine version, GPU type and count, prompt/output length distributions, arrival process, warmup, measurement window.</li>
+        <li><b>Vary:</b> one thing — concurrency, chunk size, quantization, engine. A table where three things changed proves nothing.</li>
+        <li><b>Report:</b> TTFT and TPOT at p50 <em>and</em> p99, sustained tok/s, goodput under your SLO, $/M tokens, and the repro command.</li>
+      </ul>
+      <p><b>Goodput</b> is the honest headline: throughput <em>subject to</em> an SLO (e.g. TPOT &lt; 100 ms). Peak tok/s at a 2-second TPOT is a number no chat user would accept.</p></div>
+    <div class="card"><h3>The seven sins — audit others, never commit them</h3>
+      <ul>
+        <li>Peak instead of sustained throughput</li>
+        <li>Tiny outputs (prefill theater inflates tok/s)</li>
+        <li>No arrival process — closed-loop concurrency hides queueing</li>
+        <li>Warmup runs counted in the results</li>
+        <li>Cherry-picked batch size</li>
+        <li>$/M mixing on-demand and reserved pricing</li>
+        <li>One run, no variance</li>
+      </ul>
+      <p>Reading a vendor's “10,000 tok/s on 8B!”? Ask three questions: what output length, what arrival process, and what p99 TPOT?</p></div>
+  </div>
+
+  <h3 style="font-family:Fraunces,serif;font-size:22px;margin:26px 0 10px">Reference numbers from the course cost model</h3>
+  <p class="small" style="max-width:760px">These are the curriculum's worked examples (Days 9–13) — roofline predictions, stated as predictions. Your published report replaces them with measurements from your cluster, using the same table shape.</p>
+  <div class="tblwrap"><table>
+    <thead><tr><th>Configuration</th><th class="numcell">TTFT</th><th class="numcell">TPOT</th><th class="numcell">Throughput</th><th>Why — the governing math</th></tr></thead>
+    <tbody>
+      <tr><td data-l="">Llama-3.1-8B fp16 · H100 · batch 1 · 2k→200 tok</td><td class="numcell" data-l="TTFT">≈51 ms</td><td class="numcell" data-l="TPOT">≈5 ms</td><td class="numcell" data-l="Tok/s">≈200 tok/s</td><td data-l="Math">Decode streams 16 GB ÷ 3.35 TB/s ≈ 4.8 ms/token → ~210 tok/s ceiling; decode is ~95% of the 1.05 s request</td></tr>
+      <tr><td data-l="">Llama-3.1-70B fp16 · H100 · batch 1</td><td class="numcell" data-l="TTFT">—</td><td class="numcell" data-l="TPOT">≈42 ms</td><td class="numcell" data-l="Tok/s">≈24 tok/s</td><td data-l="Math">140 GB of weights ÷ 3.35 TB/s ≈ 42 ms/token (needs 2× H100 or quantization — 140 GB &gt; 80 GB HBM)</td></tr>
+      <tr><td data-l="">Llama-3.1-70B fp16 · H100 · batch 32</td><td class="numcell" data-l="TTFT">—</td><td class="numcell" data-l="TPOT">≈42 ms / step</td><td class="numcell" data-l="Tok/s">≈760 tok/s</td><td data-l="Math">Same 42 ms weight-stream, 32 tokens per pass — batching amortizes the byte cost, the whole economics of serving</td></tr>
+      <tr><td data-l="">8B · H100 · 2.5k context · KV-limited batch</td><td class="numcell" data-l="TTFT">—</td><td class="numcell" data-l="TPOT">—</td><td class="numcell" data-l="Tok/s">Batch cap ≈195</td><td data-l="Math">(80 − 16) GB ÷ (128 KB × 2,560 tokens ≈ 328 MB/seq) — memory flattens the curve before the compute knee at batch ≈295</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="lab" style="margin-top:18px">
+    <h3>Lab — run the publishable benchmark (Day 82, hardened)</h3>
+    <pre><span class="c"># 1. Serve, pinned and recorded</span>
+vllm serve meta-llama/Llama-3.1-8B-Instruct \
+  --max-model-len 4096 --enable-metrics <span class="c"># note the version: pip show vllm</span>
+
+<span class="c"># 2. Benchmark from a DIFFERENT machine, warmup excluded, 3 runs</span>
+python benchmark_serving.py --backend vllm --model meta-llama/Llama-3.1-8B-Instruct \
+  --dataset-name random --input-len 512 --output-len 256 \
+  --num-prompts 500 --request-rate 16 <span class="c"># open-loop arrivals, not just concurrency</span>
+
+<span class="c"># 3. Publish: config YAML + raw JSONL + auto-generated report, together</span>
+<span class="c">#    report.md must state: GPU, versions, length distributions, arrival process,</span>
+<span class="c">#    warmup policy, p50/p99 TTFT &amp; TPOT, sustained tok/s, $/M, and this command.</span></pre>
+    <p class="small">Repeat the identical run at request rates that bracket saturation. The knee — where p99 TTFT leaves the prefill floor and queueing takes over — is the most informative point in the whole report.</p>
+  </div>
+</section>
+
+<!-- ============ 3 CALCULATOR ============ -->
+<section id="calculator">
+  <div class="sec-head"><div class="num">3</div><div>
+    <h2>The roofline benchmark calculator</h2>
+    <p>Predict before you measure. This calculator implements the course cost model (Days 9–10) — weight streaming for decode, FLOPs for prefill, KV bytes for capacity. Its outputs are <b>model estimates</b>: publish them as predictions next to your measurements, and explain the gap. A model within ~20% is a good model.</p>
+  </div></div>
+
+  <div class="lab">
+    <div class="grid2">
+      <div>
+        <label for="model">Model</label>
+        <select id="model">
+          <option value="8b" selected>Llama-3.1-8B — 32 layers · 8 KV heads</option>
+          <option value="70b">Llama-3.1-70B — 80 layers · 8 KV heads</option>
+          <option value="q7b">Qwen2.5-7B — 28 layers · 4 KV heads</option>
+          <option value="q32b">Qwen2.5-32B — 64 layers · 8 KV heads</option>
+        </select>
+        <label for="gpu">GPU</label>
+        <select id="gpu">
+          <option value="h100" selected>H100 SXM — 3.35 TB/s · 989 TFLOP/s · 80 GB</option>
+          <option value="a100">A100-80GB — 2.0 TB/s · 312 TFLOP/s · 80 GB</option>
+          <option value="l4">L4 — 0.30 TB/s · 242 TFLOP/s · 24 GB</option>
+          <option value="t4">T4 — 0.32 TB/s · 65 TFLOP/s · 16 GB</option>
+          <option value="4090">RTX 4090 — 1.01 TB/s · 165 TFLOP/s · 24 GB</option>
+        </select>
+        <label for="quant">Weight precision</label>
+        <select id="quant">
+          <option value="fp16" selected>FP16 — 2 bytes/param</option>
+          <option value="fp8">FP8 — 1 byte/param</option>
+          <option value="int4">INT4 / AWQ — 0.5 bytes/param</option>
+        </select>
+        <label for="gpus">GPU count (tensor parallel) <output id="gpusOut">1</output></label>
+        <input type="range" id="gpus" min="1" max="8" step="1" value="1">
+      </div>
+      <div>
+        <label for="prompt">Prompt length (tokens) <output id="promptOut">512</output></label>
+        <input type="range" id="prompt" min="128" max="8192" step="128" value="512">
+        <label for="outlen">Output length (tokens) <output id="outlenOut">256</output></label>
+        <input type="range" id="outlen" min="32" max="1024" step="32" value="256">
+        <label for="batch">Concurrent sequences (batch) <output id="batchOut">16</output></label>
+        <input type="range" id="batch" min="1" max="256" step="1" value="16">
+        <label for="price">GPU price, $/hour per GPU (edit to your actual rate) </label>
+        <input type="number" id="price" value="2.50" min="0" step="0.05">
+        <p class="small">Efficiency assumptions, stated openly: decode achieves 72% of peak bandwidth, prefill 45% of peak FLOPs, 10% HBM reserved for activations/overhead, KV cache in fp16. Change the setup and the estimate moves — that's the point of a model.</p>
+      </div>
+    </div>
+    <div id="fitWarn" class="warnbox" style="display:none"></div>
+    <div class="calc-result">
+      <div><b id="rTTFT">—</b><span>Est. TTFT (prefill + 1 step)</span></div>
+      <div><b id="rTPOT">—</b><span>Est. TPOT per token</span></div>
+      <div><b id="rTPS">—</b><span>Est. aggregate tok/s</span></div>
+      <div><b id="rCost">—</b><span>Est. $ / 1M output tokens</span></div>
+      <div><b id="rE2E">—</b><span>Est. end-to-end / request</span></div>
+      <div><b id="rKV">—</b><span>KV cache for this batch</span></div>
+      <div><b id="rMaxBatch">—</b><span>Max batch the KV memory allows</span></div>
+      <div><b id="rBound">—</b><span>Bottleneck at this batch</span></div>
+    </div>
+    <p class="small" id="calcNote" style="margin-top:14px"></p>
+  </div>
+
+  <h3 style="font-family:Fraunces,serif;font-size:22px;margin:26px 0 6px">Throughput vs batch — where the curve bends</h3>
+  <p class="small" style="max-width:760px">Modeled from the same equations: throughput rises linearly while decode is bandwidth-bound (one weight-stream serves the whole batch), then flattens at the compute ceiling or the KV-memory wall — whichever comes first. The dashed line marks your selected batch.</p>
+  <canvas id="chart" width="1040" height="480" aria-label="Chart of modeled aggregate throughput versus batch size"></canvas>
+</section>
+
+<!-- ============ 4 COST ============ -->
+<section id="cost">
+  <div class="sec-head"><div class="num">4</div><div>
+    <h2>Cost benchmarks: dollars per million tokens</h2>
+    <p>The unit economics that decide build-vs-buy. One formula, applied honestly, with utilization doing most of the damage.</p>
+  </div></div>
+  <div class="formula">$/M output tokens = (GPU $/hr × GPU count) ÷ (sustained tok/s × 3,600 s/hr) × 1,000,000
+Effective $/M = headline $/M ÷ utilization   <span style="opacity:.65">← a GPU busy 30% of the day costs 3.3× its headline rate</span></div>
+  <div class="grid3" style="margin-top:16px">
+    <div class="card"><h3>Self-host wins when…</h3><p>Utilization is high and steady (batch jobs, internal tools with queue depth), the model is open-weight, and someone — you — owns the pager. The fixed cost amortizes across every token, all day.</p></div>
+    <div class="card"><h3>APIs win when…</h3><p>Traffic is spiky or tiny, the model must be frontier-class, or the team's scarce hours are worth more than the GPU delta. You are renting elasticity and an ops team, not just tokens.</p></div>
+    <div class="card"><h3>The trap</h3><p>Comparing your <em>peak</em> tok/s against an API's list price. Compare sustained tok/s at your SLO, at your measured utilization, including the load-gen and idle hours. Most “self-hosting is 10× cheaper” posts fail exactly here — sin #1 and sin #6 together.</p></div>
+  </div>
+  <div class="callout"><strong>Publish both numbers:</strong> headline $/M at saturation <em>and</em> effective $/M at your real duty cycle. The pair is more credible than either alone — and it's the analysis a platform team actually hires for.</div>
+</section>
+
+<!-- ============ 5 KERNELS ============ -->
+<section id="kernels">
+  <div class="sec-head"><div class="num">5</div><div>
+    <h2>Kernel optimization writeups</h2>
+    <p>Stage 8 gave you the kernels. A writeup turns one kernel into evidence of method: a baseline you measured, a roofline that predicted the headroom, one optimization at a time, and an honest end-to-end effect — including when it's small.</p>
+  </div></div>
+
+  <div class="tabs" role="tablist">
+    <button class="active" data-tab="wu-structure">The structure</button>
+    <button data-tab="wu-rms">Writeup 1 · Fused RMSNorm</button>
+    <button data-tab="wu-flash">Writeup 2 · FlashAttention tiling</button>
+    <button data-tab="wu-gemv">Writeup 3 · Fused dequant GEMV</button>
+  </div>
+
+  <div class="tabpane active" id="wu-structure">
+    <div class="grid2">
+      <div class="card"><h3>The six-part writeup</h3>
+        <ul>
+          <li><b>1 · Problem &amp; baseline.</b> What the kernel does, where it sits in decode, its measured time and % of step — from a profiler trace, not a guess.</li>
+          <li><b>2 · Roofline.</b> Bytes moved, FLOPs, arithmetic intensity, % of peak bandwidth achieved. The roofline says how much headroom exists before you write a line of CUDA/Triton.</li>
+          <li><b>3 · One optimization.</b> Fusion, tiling, vectorized loads, warp specialization — one idea, explained with the memory-traffic math.</li>
+          <li><b>4 · Correctness.</b> allclose against the PyTorch reference, tolerance stated, edge shapes tested.</li>
+          <li><b>5 · Results.</b> Before/after table (mean ± std, 3+ runs), % of peak achieved, and the end-to-end tok/s effect.</li>
+          <li><b>6 · Limitations &amp; what's next.</b> Shapes where it loses, hardware it assumes, the next bottleneck in line.</li>
+        </ul></div>
+      <div class="card"><h3>Why the end-to-end number is mandatory</h3>
+        <p>Amdahl's law is the writeup's conscience. In 8B decode at batch 1, every major op is bandwidth- or latency-bound and the whole step is ≈4.8 ms on H100:</p>
+        <div class="bar-row"><span>MLP projections</span><div class="bar-track"><div class="bar-fill" style="width:52%"></div></div><b>~52%</b></div>
+        <div class="bar-row"><span>QKV + O projections</span><div class="bar-track"><div class="bar-fill" style="width:26%"></div></div><b>~26%</b></div>
+        <div class="bar-row"><span>Attention (2k ctx)</span><div class="bar-track"><div class="bar-fill teal" style="width:10%"></div></div><b>~10%</b></div>
+        <div class="bar-row"><span>Norms, softmax, sampler</span><div class="bar-track"><div class="bar-fill teal" style="width:12%"></div></div><b>~12%</b></div>
+        <p>A 2× faster RMSNorm that is 2% of the step buys you ~1% end-to-end. Say so in the writeup. Reviewers and hiring managers trust the author who reports the 1% — and the kernel that <em>is</em> 26% of the step gets their full attention.</p></div>
+    </div>
+  </div>
+
+  <div class="tabpane" id="wu-rms">
+    <div class="grid2">
+      <div class="card"><h3>Fused RMSNorm — the teaching kernel</h3>
+        <p><b>Problem.</b> Naive RMSNorm in PyTorch launches several elementwise kernels, each re-reading the row from HBM. For d=4096 the math is trivial (~8k FLOP/row); the op is pure memory traffic plus launch overhead — and decode launches it 2× per layer per token.</p>
+        <p><b>Optimization.</b> One Triton kernel: one program per row, load once into SRAM/registers, compute sum-of-squares, normalize, scale by γ, store once. Traffic drops to the theoretical minimum: one read, one write.</p>
+        <p><b>Benchmark protocol (from Stage 8).</b> Rows ∈ {128, 2048, 8192}, d=4096, fp16; report achieved GB/s and % of the GPU's peak bandwidth for fused vs <code>torch.nn.functional.rms_norm</code>, 3 runs each.</p></div>
+      <div class="card"><h3>Metrics to fill from your run</h3>
+        <div class="kmetric"><span>Bytes moved per row (fp16, d=4096)</span><b>16 KB (read + write)</b></div>
+        <div class="kmetric"><span>Arithmetic intensity</span><b>≈0.5 FLOP/byte — bandwidth-bound</b></div>
+        <div class="kmetric"><span>Success bar</span><b>&gt;80% of peak bandwidth</b></div>
+        <div class="kmetric"><span>Correctness</span><b>allclose vs reference, rtol 1e-2 (fp16)</b></div>
+        <div class="kmetric"><span>Expected end-to-end effect</span><b>Small at batch 1 — report it anyway</b></div>
+        <p class="small">The writeup's real payload is the method: profiler first, roofline second, kernel third. This is the kernel every inference engineer writes once; yours is the one with the receipts.</p></div>
+    </div>
+  </div>
+
+  <div class="tabpane" id="wu-flash">
+    <div class="grid2">
+      <div class="card"><h3>FlashAttention — tiling attention into SRAM</h3>
+        <p><b>Problem.</b> Materializing the n×n score matrix costs 1.07 GB per layer at n=4096, 32 heads, fp16 (Day 3's arithmetic) — attention becomes an HBM-traffic problem long before it's a math problem.</p>
+        <p><b>Optimization.</b> Tile Q/K/V into SRAM-sized blocks; maintain a running softmax (max + sum rescaling — the “online softmax”) so the full score matrix never exists in HBM. Same math, O(n) memory traffic instead of O(n²) writes.</p>
+        <p><b>Benchmark protocol.</b> n ∈ {512, 2048, 8192}; your Triton kernel vs <code>F.scaled_dot_product_attention</code> and, where available, <code>flash_attn_func</code>; report time, implied TFLOP/s, and HBM traffic saved.</p></div>
+      <div class="card"><h3>Metrics to fill from your run</h3>
+        <div class="kmetric"><span>Score-matrix bytes avoided (n=4096)</span><b>≈1.07 GB / layer</b></div>
+        <div class="kmetric"><span>Key identity to verify</span><b>Online-softmax output ≡ naive, allclose</b></div>
+        <div class="kmetric"><span>Where it wins</span><b>Prefill &amp; long context — compute-dense</b></div>
+        <div class="kmetric"><span>Where it barely helps</span><b>Batch-1 decode — seq=1 query, already tiny</b></div>
+        <p class="small">That last line is the mark of a serious writeup: FlashAttention is a prefill/long-context optimization. Claiming decode wins from it would be sin-adjacent.</p></div>
+    </div>
+  </div>
+
+  <div class="tabpane" id="wu-gemv">
+    <div class="grid2">
+      <div class="card"><h3>Fused dequant GEMV — attacking the 4.8 ms</h3>
+        <p><b>Problem.</b> Batch-1 decode is a sequence of GEMVs streaming all weights per token. With INT4 weights, a naive path dequantizes into a temporary fp16 buffer — writing and re-reading gigabytes to save gigabytes.</p>
+        <p><b>Optimization.</b> Fuse dequantization into the GEMV: load packed INT4, unpack and scale in registers, multiply-accumulate, never materialize the fp16 weights. Traffic approaches the INT4 ideal: 0.5 bytes/param — a theoretical ~4× decode speedup over fp16 streaming, bounded by everything else in the step.</p>
+        <p><b>Benchmark protocol.</b> Per-projection timing (QKV, O, MLP) at 8B shapes; end-to-end TPOT vs the unfused path; accuracy spot-check (perplexity delta from Stage 6) alongside the speed numbers.</p></div>
+      <div class="card"><h3>Metrics to fill from your run</h3>
+        <div class="kmetric"><span>Weight traffic / token, 8B INT4</span><b>≈4 GB vs 16 GB fp16</b></div>
+        <div class="kmetric"><span>Theoretical TPOT floor (H100)</span><b>≈1.2 ms vs 4.8 ms fp16</b></div>
+        <div class="kmetric"><span>Reality discount</span><b>Attention, norms, launch overhead don't shrink</b></div>
+        <div class="kmetric"><span>Accuracy gate</span><b>Perplexity / eval delta stated next to speed</b></div>
+        <p class="small">Speed without the accuracy line is marketing. The Stage 6 discipline — every compression claim ships with its eval — is what separates a writeup from an ad.</p></div>
+    </div>
+  </div>
+
+  <div style="margin-top:18px">
+    <button class="btn" id="copyWriteup">Copy the writeup template (Markdown)</button><span class="copied" id="copyWriteupMsg"></span>
+  </div>
+</section>
+
+<!-- ============ 6 PORTFOLIO ============ -->
+<section id="portfolio">
+  <div class="sec-head"><div class="num">6</div><div>
+    <h2>Assemble the portfolio</h2>
+    <p>One GitHub profile, one story: a backend and distributed-systems engineer who can now run, measure, and optimize LLM inference — with artifacts at every level of the stack.</p>
+  </div></div>
+
+  <div class="tblwrap"><table>
+    <thead><tr><th>Artifact</th><th>What it proves</th><th>Where it lives</th></tr></thead>
+    <tbody>
+      <tr><td data-l=""><b>Capstone PR</b> (vLLM / SGLang / Dynamo)</td><td data-l="Proves">You can land a change in a real codebase: repro, minimal diff, tests, benchmarks, review rounds</td><td data-l="Lives">Upstream repo + <code>capstone/REPORT.md</code></td></tr>
+      <tr><td data-l=""><b>Benchmark report</b></td><td data-l="Proves">Measurement discipline — methodology, percentiles, $/M, repro commands</td><td data-l="Lives"><code>benchmarks/</code> — configs, raw JSONL, report</td></tr>
+      <tr><td data-l=""><b>Kernel writeups ×2–3</b></td><td data-l="Proves">GPU performance method: profile → roofline → optimize → verify</td><td data-l="Lives"><code>kernels/</code> — code + post per kernel</td></tr>
+      <tr><td data-l=""><b>Self-hosted cluster</b></td><td data-l="Proves">Systems operation: gateway, scheduling, observability, failure drills</td><td data-l="Lives"><code>cluster/</code> — manifests, runbook, dashboards</td></tr>
+      <tr><td data-l=""><b>Production-ish server</b> (Day 28 lineage)</td><td data-l="Proves">Serving fundamentals built by hand before frameworks: batching, metrics, SLOs</td><td data-l="Lives"><code>server/</code></td></tr>
+      <tr><td data-l=""><b>Field manual</b> (Day 90)</td><td data-l="Proves">The distilled judgment: formulas, memorized numbers, decision tables</td><td data-l="Lives"><code>field-manual.md</code> — one page, pinned</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="card"><h3>Resume bullets that survive follow-up questions</h3>
+      <ul>
+        <li>“Cut prefill latency 44% on prefix-cache-miss workloads (212±4 ms → 118±3 ms, n=30) via cache-key normalization; PR to [repo], 47/47 neighboring tests green.” <span class="small">(The curriculum's worked-example shape — replace every number with your measured one.)</span></li>
+        <li>“Published reproducible benchmarks for Llama-3.1-8B/70B on H100: TTFT/TPOT p50/p99, sustained tok/s, and $/M tokens under an open-loop arrival process.”</li>
+        <li>“Wrote a fused RMSNorm in Triton achieving &gt;80% of peak HBM bandwidth; documented with roofline analysis and end-to-end impact.”</li>
+        <li>Every bullet names a metric, a method, and an artifact a reader can open. If a bullet can't survive “show me,” rewrite it until it can.</li>
+      </ul></div>
+    <div class="card"><h3>The 3-minute demo script</h3>
+      <ul>
+        <li><b>0:00</b> — The cluster dashboard: requests flowing, KV utilization live.</li>
+        <li><b>0:40</b> — Fire the load harness; watch p99 TTFT find the knee you published.</li>
+        <li><b>1:30</b> — The benchmark report: one table, methodology in one breath.</li>
+        <li><b>2:10</b> — The PR: problem, diff size, before/after, review status.</li>
+        <li><b>2:45</b> — The honest limitation and what you'd do next. End on judgment, not features.</li>
+      </ul>
+      <p>Rehearse it against the actual artifacts. A demo that opens files beats a deck that describes them.</p></div>
+  </div>
+
+  <div style="margin-top:6px">
+    <button class="btn" id="copyReadme">Copy the portfolio README skeleton</button><span class="copied" id="copyReadmeMsg"></span>
+    <button class="btn secondary" id="copyPR">Copy the PR description template</button><span class="copied" id="copyPRMsg"></span>
+  </div>
+</section>
+
+<!-- ============ 7 CAPSTONE ============ -->
+<section id="capstone">
+  <div class="sec-head"><div class="num">7</div><div>
+    <h2>Capstone week &amp; graduation (Days 85–90)</h2>
+    <p>The PR is the exam; the contributor rhythm is the degree. “Merged” is deliberately <em>not</em> an acceptance criterion — merge timing belongs to the maintainers. Everything in your control is.</p>
+  </div></div>
+
+  <div class="timeline">
+    <div class="step"><b>Day 85</b><div><strong>Pick repo &amp; issue.</strong> <span>Triage 3 candidates on repro-ability × diff size × review speed. Write <code>capstone/DESIGN.md</code> with 5 measurable acceptance criteria.</span></div><span>DESIGN.md</span></div>
+    <div class="step"><b>Day 86</b><div><strong>Repro &amp; implement I.</strong> <span>Baseline numbers first (3 runs, committed), failing test second, fix third. Minimal diff — adjacent rot becomes a separate issue.</span></div><span>repro.py + red test</span></div>
+    <div class="step"><b>Day 87</b><div><strong>Implement II &amp; validate.</strong> <span>Relevant suites + linters green locally; before/after benchmarked like a maintainer — same hardware, baseline via git stash, mean ± std.</span></div><span>Benchmark table</span></div>
+    <div class="step"><b>Day 88</b><div><strong>Write-up.</strong> <span><code>REPORT.md</code> (≤6 pages) and the PR description: summary, motivation, design, benchmarks, testing, limitations. Sin-audit your own numbers.</span></div><span>REPORT.md</span></div>
+    <div class="step"><b>Day 89</b><div><strong>Open the PR.</strong> <span>CLA, CI green, same-day review responses, fixups as new commits. Start the small second PR while the first is in review.</span></div><span>PR URL</span></div>
+    <div class="step"><b>Day 90</b><div><strong>Graduation.</strong> <span>30-question checkpoint gauntlet (target ≥25/30), the one-page field manual, and the rhythm on the calendar: 2 papers/month, 1 PR/quarter, quarterly re-benchmark.</span></div><span>field-manual.md</span></div>
+  </div>
+
+  <h3 style="font-family:Fraunces,serif;font-size:22px;margin:28px 0 12px">The 7-day publishing sprint — from finished work to public portfolio</h3>
+  <ul class="checklist">
+    <li><b>Day 1 — Freeze and verify.</b><span>Re-run every number you intend to publish from a clean checkout. Anything you can't reproduce today doesn't ship.</span></li>
+    <li><b>Day 2 — Benchmark report.</b><span>Configs + raw JSONL + report committed together. A reader can re-run it without asking you anything.</span></li>
+    <li><b>Day 3 — Kernel writeups.</b><span>Two posts minimum, six-part structure, end-to-end effects stated honestly.</span></li>
+    <li><b>Day 4 — Cluster runbook.</b><span>Bring-up from zero, dashboards, the failure drills you actually ran (kill a worker, burst past the KV wall).</span></li>
+    <li><b>Day 5 — README and demo.</b><span>The portfolio README links everything in one screen; record or rehearse the 3-minute demo.</span></li>
+    <li><b>Day 6 — Whiteboard pass.</b><span>For each headline claim, rehearse the defense: why this design, where it fails, what a malicious or pathological workload does to it.</span></li>
+    <li><b>Day 7 — Ship and schedule.</b><span>Publish, then put the rhythm on the calendar: 2 papers/month, 1 PR/quarter, quarterly re-benchmark. Numbers rot; the habit is the asset.</span></li>
+  </ul>
+</section>
+
+<!-- ============ CHECK ============ -->
+<section id="check">
+  <div class="sec-head"><div class="num">✓</div><div>
+    <h2>Check yourself</h2>
+    <p>Sampled from the Day 90 gauntlet. Answer cold; the re-derivation is the learning.</p>
+  </div></div>
+  <details><summary>1 · A vendor claims 10,000 tok/s on an 8B model. Your first three questions?</summary><p>What output length? (Short outputs make it prefill theater.) What arrival process / concurrency? (Closed-loop at 256 hides queueing.) What p99 TPOT? (Probably seconds — unusable for chat.) Bonus: sustained or peak, and how many runs?</p></details>
+  <details><summary>2 · Your cluster: 8B fp16 on one 80 GB H100, 4k context. Roughly when does preemption start, and how do you know?</summary><p>KV per sequence = 128 KB/token × 4,096 ≈ 512 MB. With ~60 GB usable for KV after 16 GB of weights and overhead, that's ≈115 concurrent sequences. You know because the running/waiting gauges and KV-utilization panel in your dashboard show it — and your benchmark's knee lands there.</p></details>
+  <details><summary>3 · Your fused kernel is 2× faster. The PR reviewer asks “so what?” — what do you answer?</summary><p>With Amdahl: the kernel's share of the decode step (from the profiler), the resulting end-to-end TPOT/tok/s delta measured, and the shapes where it doesn't help. “2× on 2% of the step ≈ 1% end-to-end” said plainly earns more trust than any headline.</p></details>
+  <details><summary>4 · Headline $/M is $0.40 but your GPU is busy 25% of the day. What do you publish?</summary><p>Both numbers: $0.40/M at saturation and ≈$1.60/M effective at your 25% duty cycle — with the utilization measurement shown. The pair is the analysis; either alone is a sales pitch.</p></details>
+  <details><summary>5 · Why is “PR merged” not one of the capstone acceptance criteria?</summary><p>Because merge timing belongs to the maintainers, not you. The criteria you control: PR opened, CI green, before/after benchmarks in the description, tests added, round-1 feedback addressed. Judge yourself on those; shepherd the merge with same-day responses.</p></details>
+  <details><summary>6 · Two numbers you'll never forget?</summary><p>128 KB of KV cache per token for Llama-3.1-8B fp16 — and the H100 ridge point, ≈295 FLOP/byte. The first sizes every serving system you'll ever build; the second tells you which side of the roofline you're on.</p></details>
+</section>
+
+<footer>
+  <p><strong>Stage 12 of 12 · LLM Inference Mastery.</strong> The interview story this stage builds: “I spent 90 days going from backend engineer to inference engineer — here's my cluster, here are my published benchmarks, and here's my PR.” Everything above is the scaffolding for that sentence. Calculator outputs are roofline-modeled estimates from the course cost model (Days 9–10), stated with their assumptions — replace them with your measured numbers when you publish.</p>
+</footer>
+</div>
+
+<script>
+var MODELS = {
+  "8b":  {name:"Llama-3.1-8B",  params:8.03, layers:32, kvHeads:8, headDim:128},
+  "70b": {name:"Llama-3.1-70B", params:70.6, layers:80, kvHeads:8, headDim:128},
+  "q7b": {name:"Qwen2.5-7B",    params:7.62, layers:28, kvHeads:4, headDim:128},
+  "q32b":{name:"Qwen2.5-32B",   params:32.5, layers:64, kvHeads:8, headDim:128}
+};
+var GPUS = {
+  "h100":{name:"H100 SXM",  bw:3350, tflops:989, mem:80},
+  "a100":{name:"A100-80GB", bw:2000, tflops:312, mem:80},
+  "l4":  {name:"L4",        bw:300,  tflops:242, mem:24},
+  "t4":  {name:"T4",        bw:320,  tflops:65,  mem:16},
+  "4090":{name:"RTX 4090",  bw:1008, tflops:165, mem:24}
+};
+var QUANTS = {"fp16":2, "fp8":1, "int4":0.5};
+var BW_EFF = 0.72, PREFILL_EFF = 0.45, RESERVE = 0.10;
+
+function fmt(n, d){ return n.toLocaleString("en-US",{maximumFractionDigits:(d==null?0:d), minimumFractionDigits:(d==null?0:d)}); }
+
+function estimate(mKey, gKey, qKey, nGpu, prompt, outlen, batch){
+  var m = MODELS[mKey], g = GPUS[gKey], bpp = QUANTS[qKey];
+  var weightGB = m.params * bpp;                       // total weights, GB (decimal, as in course math)
+  var perGpuWeight = weightGB / nGpu;
+  var totalMem = g.mem * nGpu;
+  var usableKV = totalMem * (1 - RESERVE) - weightGB;  // GB across the TP group
+  var kvPerTokenGB = 2 * m.layers * m.kvHeads * m.headDim * 2 / 1e9; // fp16 KV
+  var seqTokens = prompt + outlen;
+  var kvPerSeq = kvPerTokenGB * seqTokens;
+  var maxBatch = usableKV > 0 ? Math.floor(usableKV / kvPerSeq) : 0;
+  var fits = perGpuWeight < g.mem * (1 - RESERVE) && usableKV > 0;
+  // Decode: one step streams the weights (per-GPU share over per-GPU bandwidth) plus KV reads
+  var stepWeightSec = (perGpuWeight / g.bw) / BW_EFF;
+  var kvTrafficGB = kvPerTokenGB * prompt * batch;     // attention reads for the batch, approx at prompt depth
+  var stepKVSec = (kvTrafficGB / (g.bw * nGpu)) / BW_EFF;
+  var stepSec = stepWeightSec + stepKVSec;
+  // Compute ceiling for aggregate throughput
+  var computeCeil = (g.tflops * 1e12 * nGpu * 0.5) / (2 * m.params * 1e9); // ~50% MFU cap
+  var bwTPS = batch / stepSec;
+  var tps = Math.min(bwTPS, computeCeil);
+  var effStep = batch / tps;
+  var tpotMs = effStep * 1000;
+  // Prefill: FLOPs = 2 * params * prompt tokens, at PREFILL_EFF of peak, queueing-free single request
+  var prefillSec = (2 * m.params * 1e9 * prompt) / (g.tflops * 1e12 * nGpu * PREFILL_EFF);
+  var ttftMs = prefillSec * 1000 + tpotMs;
+  var e2eSec = prefillSec + effStep * outlen;
+  var kvBatchGB = kvPerSeq * batch;
+  var ridge = g.tflops * 1e12 / (g.bw * 1e9);
+  var bound = batch < ridge ? "Bandwidth-bound (decode regime)" : "Compute ceiling region";
+  if (batch > maxBatch) bound = "KV-memory wall — preemption territory";
+  return {weightGB:weightGB, perGpuWeight:perGpuWeight, usableKV:usableKV, kvPerTokenGB:kvPerTokenGB,
+          maxBatch:maxBatch, fits:fits, tps:tps, tpotMs:tpotMs, ttftMs:ttftMs, e2eSec:e2eSec,
+          kvBatchGB:kvBatchGB, bound:bound, ridge:ridge, computeCeil:computeCeil};
+}
+
+function drawChart(mKey, gKey, qKey, nGpu, prompt, outlen, selBatch){
+  var cv = document.getElementById("chart"); if(!cv) return;
+  var ctx = cv.getContext("2d");
+  var W = cv.width, H = cv.height;
+  var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  var ink = dark ? "#f5f0e6" : "#16130e", mut = dark ? "#a89f92" : "#6b6255", line = dark ? "#2e2a24" : "#e4ddd0";
+  ctx.clearRect(0,0,W,H);
+  var batches = [1,2,4,8,16,32,64,128,256];
+  var pts = batches.map(function(b){ return {b:b, t:estimate(mKey,gKey,qKey,nGpu,prompt,outlen,b).tps}; });
+  var est0 = estimate(mKey,gKey,qKey,nGpu,prompt,outlen,1);
+  var maxT = Math.max.apply(null, pts.map(function(p){return p.t;})) * 1.15;
+  var padL=78, padR=24, padT=22, padB=46, iw=W-padL-padR, ih=H-padT-padB;
+  function X(b){ return padL + (Math.log2(b)/8) * iw; }
+  function Y(t){ return padT + ih - (t/maxT) * ih; }
+  ctx.strokeStyle = line; ctx.fillStyle = mut; ctx.font = "22px Inter, sans-serif"; ctx.lineWidth = 1;
+  for(var i=0;i<=4;i++){ var t = maxT*i/4, y = Y(t); ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+    ctx.fillText(fmt(Math.round(t)), 8, y+7); }
+  batches.forEach(function(b){ ctx.fillText("b="+b, X(b)-16, H-14); });
+  ctx.fillText("aggregate tok/s (modeled)", 8, 18);
+  // KV wall shading
+  if(est0.maxBatch >= 1 && est0.maxBatch < 256){
+    var xw = X(Math.max(1,est0.maxBatch));
+    ctx.fillStyle = dark ? "rgba(185,28,28,.13)" : "rgba(185,28,28,.08)";
+    ctx.fillRect(xw, padT, W-padR-xw, ih);
+    ctx.fillStyle = "#b91c1c"; ctx.font = "600 20px Inter, sans-serif";
+    ctx.fillText("KV wall ≈ batch " + est0.maxBatch, Math.min(xw+10, W-260), padT+26);
+  }
+  // curve
+  ctx.strokeStyle = "#c2410c"; ctx.lineWidth = 3.5; ctx.beginPath();
+  pts.forEach(function(p,i){ var x=X(p.b), y=Y(p.t); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+  ctx.stroke();
+  ctx.fillStyle = "#c2410c";
+  pts.forEach(function(p){ ctx.beginPath(); ctx.arc(X(p.b), Y(p.t), 5, 0, 6.2832); ctx.fill(); });
+  // selected batch marker
+  var selT = estimate(mKey,gKey,qKey,nGpu,prompt,outlen,selBatch).tps;
+  var sx = X(Math.max(1, Math.min(256, selBatch)));
+  ctx.strokeStyle = dark ? "#fbbf24" : "#b45309"; ctx.lineWidth = 2; ctx.setLineDash([7,6]);
+  ctx.beginPath(); ctx.moveTo(sx, padT); ctx.lineTo(sx, padT+ih); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = dark ? "#fbbf24" : "#b45309";
+  ctx.beginPath(); ctx.arc(sx, Y(selT), 8, 0, 6.2832); ctx.fill();
+}
+
+function recalc(){
+  var mKey = document.getElementById("model").value;
+  var gKey = document.getElementById("gpu").value;
+  var qKey = document.getElementById("quant").value;
+  var nGpu = +document.getElementById("gpus").value;
+  var prompt = +document.getElementById("prompt").value;
+  var outlen = +document.getElementById("outlen").value;
+  var batch = +document.getElementById("batch").value;
+  var price = parseFloat(document.getElementById("price").value) || 0;
+  document.getElementById("gpusOut").textContent = nGpu;
+  document.getElementById("promptOut").textContent = fmt(prompt);
+  document.getElementById("outlenOut").textContent = fmt(outlen);
+  document.getElementById("batchOut").textContent = batch;
+  var e = estimate(mKey, gKey, qKey, nGpu, prompt, outlen, batch);
+  var warn = document.getElementById("fitWarn");
+  if(!e.fits){
+    warn.style.display = "block";
+    warn.innerHTML = "<strong>Doesn't fit:</strong> weights alone are " + fmt(e.weightGB,1) + " GB (" + fmt(e.perGpuWeight,1) + " GB/GPU) against " + GPUS[gKey].mem + " GB of HBM per GPU. Add GPUs (tensor parallel), drop to FP8/INT4, or pick a smaller model — this is Day 10's capacity check doing its job.";
+  } else if(batch > e.maxBatch){
+    warn.style.display = "block";
+    warn.innerHTML = "<strong>Past the KV wall:</strong> batch " + batch + " needs " + fmt(e.kvBatchGB,1) + " GB of KV cache but only ≈" + fmt(e.usableKV,1) + " GB is usable. On a real engine this is where preemption (or 429s) starts — a great thing to demonstrate, a bad thing to publish as “throughput.”";
+  } else { warn.style.display = "none"; }
+  document.getElementById("rTTFT").textContent = e.fits ? fmt(e.ttftMs, e.ttftMs<100?1:0) + " ms" : "—";
+  document.getElementById("rTPOT").textContent = e.fits ? fmt(e.tpotMs,1) + " ms" : "—";
+  document.getElementById("rTPS").textContent = e.fits ? fmt(Math.round(e.tps)) + " tok/s" : "—";
+  var cost = (e.tps > 0) ? (price * nGpu) / (e.tps * 3600) * 1e6 : 0;
+  document.getElementById("rCost").textContent = e.fits && cost>0 ? "$" + fmt(cost,2) : "—";
+  document.getElementById("rE2E").textContent = e.fits ? fmt(e.e2eSec,2) + " s" : "—";
+  document.getElementById("rKV").textContent = e.fits ? fmt(e.kvBatchGB,1) + " GB" : "—";
+  document.getElementById("rMaxBatch").textContent = e.fits ? fmt(e.maxBatch) + " seqs" : "0";
+  document.getElementById("rBound").textContent = e.fits ? e.bound : "Won't fit";
+  document.getElementById("calcNote").textContent = e.fits ?
+    MODELS[mKey].name + " at " + qKey.toUpperCase() + ": weights " + fmt(e.weightGB,1) + " GB · KV " + fmt(e.kvPerTokenGB*1e6,0) + " KB/token · " +
+    GPUS[gKey].name + " ridge ≈ " + fmt(e.ridge,0) + " FLOP/byte, so decode stays bandwidth-bound until batch ≈ " + fmt(e.ridge,0) +
+    " — but the KV wall (" + fmt(e.maxBatch) + ") and the compute ceiling (" + fmt(Math.round(e.computeCeil)) + " tok/s) usually arrive first. Sanity anchor: 8B fp16 on one H100 at batch 1 models to ≈" +
+    fmt(Math.round(estimate("8b","h100","fp16",1,512,256,1).tps)) + " tok/s vs the course's 210 tok/s theoretical ceiling." : "";
+  drawChart(mKey, gKey, qKey, nGpu, prompt, outlen, batch);
+}
+
+["model","gpu","quant","gpus","prompt","outlen","batch","price"].forEach(function(id){
+  var el = document.getElementById(id);
+  el.addEventListener("input", recalc); el.addEventListener("change", recalc);
+});
+recalc();
+if(window.matchMedia){ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", recalc); }
+
+// Tabs
+var tabBtns = document.querySelectorAll(".tabs button");
+tabBtns.forEach(function(btn){
+  btn.addEventListener("click", function(){
+    tabBtns.forEach(function(b){ b.classList.remove("active"); });
+    btn.classList.add("active");
+    document.querySelectorAll(".tabpane").forEach(function(p){ p.classList.remove("active"); });
+    document.getElementById(btn.getAttribute("data-tab")).classList.add("active");
+  });
+});
+
+// Copy templates
+function copyText(text, msgId){
+  function done(){ var m = document.getElementById(msgId); m.textContent = "Copied ✓"; setTimeout(function(){ m.textContent=""; }, 2200); }
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done, done); }
+  else { var ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+}
+var WRITEUP_TPL = "# [Kernel]: [one-line claim]\n\n## 1. Problem & baseline\nWhat the kernel does, where it sits in prefill/decode, profiler trace: __ ms, __% of step.\n\n## 2. Roofline\nBytes moved: __ · FLOPs: __ · Arithmetic intensity: __ FLOP/byte · Achieved: __% of peak bandwidth.\nHeadroom verdict: __\n\n## 3. Optimization\nThe one idea: __. Memory-traffic math before/after: __.\n\n## 4. Correctness\nReference: __ · Tolerance: __ · Edge shapes tested: __.\n\n## 5. Results\n| Config | Baseline (mean ± std) | Optimized (mean ± std) | % of peak |\n|---|---|---|---|\n| __ | __ | __ | __ |\nEnd-to-end effect: TPOT __ → __ ms · tok/s __ → __ (Amdahl: kernel is __% of step).\nMethod: same hardware, 3+ runs, warmup excluded.\n\n## 6. Limitations & next\nLoses on: __ · Assumes: __ · Next bottleneck: __.";
+var README_TPL = "# LLM Inference Portfolio — [Your Name]\n\nBackend/distributed-systems engineer → LLM inference engineer. 90 days, artifacts at every layer.\n\n## Headline results\n- Benchmarks: [model] on [GPU] — TTFT p99 __ ms, TPOT p99 __ ms, __ tok/s sustained, $__/M tokens → benchmarks/\n- Capstone PR: [repo] #[number] — [one-line result with before/after numbers] → capstone/REPORT.md\n- Kernels: fused RMSNorm at __% of peak bandwidth · FlashAttention tiling writeup → kernels/\n\n## Map\n- cluster/ — self-hosted serving cluster: manifests, runbook, dashboards\n- benchmarks/ — harness, configs, raw results, published report\n- kernels/ — Triton/CUDA kernels + writeups (profile → roofline → optimize → verify)\n- server/ — hand-built OpenAI-compatible server with continuous batching + metrics\n- field-manual.md — formulas, memorized numbers, decision tables\n\n## Reproduce the headline benchmark\n[exact command, versions, hardware]";
+var PR_TPL = "## Summary\n[What changes, in 3 lines.]\n\n## Motivation\nFixes #[issue]. Repro: [script/link]. Baseline: __ (3 runs, mean ± std).\n\n## Design\n[Approach and the one key decision — and why not the alternative.]\n\n## Benchmarks\n| | Before | After |\n|---|---|---|\n| [metric] | __ ± __ | __ ± __ |\nMethod: same hardware, baseline = this commit minus the change, warmup excluded, fixed seeds.\n\n## Testing\n- New test: [name] — fails before, passes after\n- Neighboring suites: __/__ pass\n- Linters / pre-commit: clean\n\n## Breaking changes / limitations\n[Honest list, or 'None known.']";
+document.getElementById("copyWriteup").addEventListener("click", function(){ copyText(WRITEUP_TPL, "copyWriteupMsg"); });
+document.getElementById("copyReadme").addEventListener("click", function(){ copyText(README_TPL, "copyReadmeMsg"); });
+document.getElementById("copyPR").addEventListener("click", function(){ copyText(PR_TPL, "copyPRMsg"); });
+</script>
+</body>
+</html>
